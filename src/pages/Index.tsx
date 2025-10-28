@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Hero } from "@/components/Hero";
 import { LearningStyleQuiz } from "@/components/LearningStyleQuiz";
 import { Dashboard } from "@/components/Dashboard";
@@ -10,9 +12,30 @@ const Index = () => {
   const [appState, setAppState] = useState<AppState>("hero");
   const [learningStyles, setLearningStyles] = useState<string[]>([]);
   const [showChat, setShowChat] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    setIsAuthenticated(!!session);
+    
+    if (session) {
+      setAppState("dashboard");
+      // Mock learning styles for now - could fetch from user preferences
+      setLearningStyles(["visual", "reading"]);
+    }
+  };
 
   const handleGetStarted = () => {
-    setAppState("quiz");
+    if (isAuthenticated) {
+      setAppState("quiz");
+    } else {
+      navigate("/auth");
+    }
   };
 
   const handleQuizComplete = (styles: string[]) => {

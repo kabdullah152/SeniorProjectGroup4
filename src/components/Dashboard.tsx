@@ -1,7 +1,10 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, MessageSquare, Calendar, MapPin, Info, Utensils, Bus, Shield } from "lucide-react";
+import { BookOpen, MessageSquare, Calendar, MapPin, Info, Utensils, Bus, Shield, User, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface DashboardProps {
   learningStyles: string[];
@@ -25,25 +28,64 @@ const styleDescriptions: Record<string, string> = {
 };
 
 export const Dashboard = ({ learningStyles, onOpenChat }: DashboardProps) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleSignOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to sign out",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Signed out",
+        description: "You've been successfully signed out",
+      });
+      navigate("/auth");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <button 
+              onClick={() => navigate("/")}
+              className="flex items-center gap-3 hover:opacity-80 transition-[var(--transition-smooth)]"
+            >
               <div className="w-10 h-10 rounded-xl bg-[image:var(--gradient-primary)] flex items-center justify-center">
                 <span className="text-white font-bold text-xl">A</span>
               </div>
               <h1 className="text-2xl font-bold text-foreground">AgentB</h1>
+            </button>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                onClick={() => navigate("/profile")}
+              >
+                <User className="mr-2 h-4 w-4" />
+                Profile
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleSignOut}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+              </Button>
+              <Button 
+                onClick={onOpenChat}
+                className="bg-[image:var(--gradient-primary)] hover:opacity-90"
+              >
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Chat
+              </Button>
             </div>
-            <Button 
-              onClick={onOpenChat}
-              className="bg-[image:var(--gradient-primary)] hover:opacity-90"
-            >
-              <MessageSquare className="mr-2 h-4 w-4" />
-              Chat with AgentB
-            </Button>
           </div>
         </div>
       </header>
@@ -105,7 +147,7 @@ export const Dashboard = ({ learningStyles, onOpenChat }: DashboardProps) => {
             <p className="text-sm text-muted-foreground mb-4">
               Academic events, deadlines, and important dates
             </p>
-            <Button variant="outline" className="w-full">
+            <Button variant="outline" className="w-full" onClick={() => navigate("/calendar")}>
               View Calendar
             </Button>
           </Card>
@@ -126,13 +168,13 @@ export const Dashboard = ({ learningStyles, onOpenChat }: DashboardProps) => {
             </Button>
           </Card>
 
-          {/* Shuttle Times */}
+          {/* Shuttle Information */}
           <Card className="p-6 shadow-[var(--shadow-soft)] border-border hover:shadow-[var(--shadow-medium)] transition-[var(--transition-smooth)]">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 rounded-lg bg-primary/10">
                 <Bus className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground">Shuttle Times</h3>
+              <h3 className="text-lg font-semibold text-foreground">Shuttle Information</h3>
             </div>
             <p className="text-sm text-muted-foreground mb-4">
               Real-time shuttle schedules and routes
@@ -142,13 +184,13 @@ export const Dashboard = ({ learningStyles, onOpenChat }: DashboardProps) => {
             </Button>
           </Card>
 
-          {/* Dining Services */}
+          {/* Dining Café Times */}
           <Card className="p-6 shadow-[var(--shadow-soft)] border-border hover:shadow-[var(--shadow-medium)] transition-[var(--transition-smooth)]">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 rounded-lg bg-secondary/10">
                 <Utensils className="w-6 h-6 text-secondary" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground">Dining Services</h3>
+              <h3 className="text-lg font-semibold text-foreground">Dining Café Times</h3>
             </div>
             <p className="text-sm text-muted-foreground mb-4">
               Menus, hours, and dining hall locations
