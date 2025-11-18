@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, FileText, Lightbulb, Image as ImageIcon, ClipboardCheck } from "lucide-react";
 
 interface UserClass {
   id: string;
@@ -24,10 +25,20 @@ interface Profile {
   university_id: string | null;
 }
 
+interface LearningResource {
+  id: string;
+  title: string;
+  resource_type: "written_explanation" | "real_world_example" | "diagram" | "pre_quiz";
+  content: string;
+  subject: string | null;
+  difficulty_level: "beginner" | "intermediate" | "advanced" | null;
+}
+
 export default function Profile() {
   const [profile, setProfile] = useState<Profile>({ full_name: "", email: "", university_id: "" });
   const [classes, setClasses] = useState<UserClass[]>([]);
   const [universities, setUniversities] = useState<{ id: string; name: string }[]>([]);
+  const [learningResources, setLearningResources] = useState<LearningResource[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newClass, setNewClass] = useState({
     class_name: "",
@@ -72,6 +83,9 @@ export default function Profile() {
 
     // Fetch classes
     fetchClasses();
+    
+    // Fetch learning resources
+    fetchLearningResources();
   };
 
   const fetchClasses = async () => {
@@ -171,6 +185,58 @@ export default function Profile() {
       fetchClasses();
     }
   };
+
+  const fetchLearningResources = async () => {
+    const { data, error } = await supabase
+      .from("learning_resources")
+      .select("*")
+      .order("resource_type")
+      .order("title");
+
+    if (error) {
+      console.error("Error fetching learning resources:", error);
+    } else {
+      setLearningResources((data || []) as LearningResource[]);
+    }
+  };
+
+  const getResourceIcon = (type: string) => {
+    switch (type) {
+      case "written_explanation":
+        return <FileText className="w-5 h-5" />;
+      case "real_world_example":
+        return <Lightbulb className="w-5 h-5" />;
+      case "diagram":
+        return <ImageIcon className="w-5 h-5" />;
+      case "pre_quiz":
+        return <ClipboardCheck className="w-5 h-5" />;
+      default:
+        return <FileText className="w-5 h-5" />;
+    }
+  };
+
+  const getResourceLabel = (type: string) => {
+    switch (type) {
+      case "written_explanation":
+        return "Written Explanation";
+      case "real_world_example":
+        return "Real-World Example";
+      case "diagram":
+        return "Diagram";
+      case "pre_quiz":
+        return "Pre-Quiz";
+      default:
+        return type;
+    }
+  };
+
+  const groupedResources = learningResources.reduce((acc, resource) => {
+    if (!acc[resource.resource_type]) {
+      acc[resource.resource_type] = [];
+    }
+    acc[resource.resource_type].push(resource);
+    return acc;
+  }, {} as Record<string, LearningResource[]>);
 
   return (
     <div className="min-h-screen bg-background">
@@ -329,6 +395,59 @@ export default function Profile() {
                     </Button>
                   </div>
                 </Card>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        {/* Available Learning Resources */}
+        <Card className="p-6 shadow-[var(--shadow-medium)]">
+          <h2 className="text-xl font-semibold text-foreground mb-6">Available Learning Resources</h2>
+          {learningResources.length === 0 ? (
+            <p className="text-muted-foreground">No learning resources available yet</p>
+          ) : (
+            <div className="space-y-6">
+              {Object.entries(groupedResources).map(([type, resources]) => (
+                <div key={type} className="space-y-3">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                      {getResourceIcon(type)}
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground">
+                      {getResourceLabel(type)}
+                    </h3>
+                    <Badge variant="secondary" className="ml-2">
+                      {resources.length}
+                    </Badge>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {resources.map((resource) => (
+                      <Card key={resource.id} className="p-4 border-border hover:shadow-[var(--shadow-soft)] transition-[var(--transition-smooth)]">
+                        <div className="flex justify-between items-start gap-3">
+                          <div className="flex-1 space-y-2">
+                            <h4 className="font-medium text-foreground">{resource.title}</h4>
+                            {resource.subject && (
+                              <Badge variant="outline" className="text-xs">
+                                {resource.subject}
+                              </Badge>
+                            )}
+                            {resource.difficulty_level && (
+                              <Badge 
+                                variant="secondary" 
+                                className="text-xs ml-2"
+                              >
+                                {resource.difficulty_level}
+                              </Badge>
+                            )}
+                            <p className="text-sm text-muted-foreground line-clamp-2">
+                              {resource.content}
+                            </p>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           )}

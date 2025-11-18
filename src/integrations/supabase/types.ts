@@ -53,6 +53,39 @@ export type Database = {
         }
         Relationships: []
       }
+      learning_resources: {
+        Row: {
+          content: string
+          created_at: string | null
+          difficulty_level: string | null
+          id: string
+          resource_type: string
+          subject: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          difficulty_level?: string | null
+          id?: string
+          resource_type: string
+          subject?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          difficulty_level?: string | null
+          id?: string
+          resource_type?: string
+          subject?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
