@@ -4,9 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { 
   Target, BookOpen, Lightbulb, CheckCircle2, Loader2, 
-  RefreshCw, Video, FileText, PenTool, Headphones
+  RefreshCw, Video, FileText, PenTool, Headphones, ExternalLink
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -34,6 +41,7 @@ interface StudyResource {
   topic: string;
   description: string;
   estimatedTime: string;
+  content?: string;
 }
 
 interface StudyPlanProps {
@@ -54,6 +62,9 @@ export const StudyPlan = ({ quizResult, learningStyles, onClear }: StudyPlanProp
   const [resources, setResources] = useState<StudyResource[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [completedObjectives, setCompletedObjectives] = useState<Set<number>>(new Set());
+  const [selectedResource, setSelectedResource] = useState<StudyResource | null>(null);
+  const [resourceContent, setResourceContent] = useState<string>("");
+  const [isLoadingContent, setIsLoadingContent] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -134,6 +145,48 @@ export const StudyPlan = ({ quizResult, learningStyles, onClear }: StudyPlanProp
       }
       return newSet;
     });
+  };
+
+  const openResource = async (resource: StudyResource) => {
+    setSelectedResource(resource);
+    setResourceContent("");
+    setIsLoadingContent(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-b-chat`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            messages: [{
+              role: "user",
+              content: `Generate detailed ${resource.type} content for: "${resource.title}" about ${resource.topic}. Description: ${resource.description}`
+            }],
+            learningStyles,
+            requestType: "resource-content",
+            resourceType: resource.type,
+            resourceTitle: resource.title,
+            topic: resource.topic,
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to load resource content");
+
+      const data = await response.json();
+      setResourceContent(data.content || data.reply || "Content not available.");
+    } catch (error) {
+      console.error("Resource content error:", error);
+      setResourceContent("Failed to load content. Please try again.");
+    } finally {
+      setIsLoadingContent(false);
+    }
   };
 
   const completionPercentage = objectives.length > 0
@@ -248,20 +301,24 @@ export const StudyPlan = ({ quizResult, learningStyles, onClear }: StudyPlanProp
                   return (
                     <div
                       key={resource.id}
-                      className="p-3 rounded-lg border border-border bg-card hover:border-primary/50 transition-all cursor-pointer"
+                      className="p-3 rounded-lg border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group"
+                      onClick={() => openResource(resource)}
                     >
                       <div className="flex items-start gap-3">
-                        <div className="p-2 rounded-lg bg-secondary/10">
+                        <div className="p-2 rounded-lg bg-secondary/10 group-hover:bg-secondary/20 transition-colors">
                           <IconComponent className="w-4 h-4 text-secondary" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="font-medium text-sm text-foreground truncate">
+                            <span className="font-medium text-sm text-foreground truncate group-hover:text-primary transition-colors">
                               {resource.title}
                             </span>
-                            <Badge variant="outline" className="text-xs ml-2 flex-shrink-0">
-                              {resource.estimatedTime}
-                            </Badge>
+                            <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+                              <Badge variant="outline" className="text-xs">
+                                {resource.estimatedTime}
+                              </Badge>
+                              <ExternalLink className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
                           </div>
                           <p className="text-xs text-muted-foreground mb-1">{resource.description}</p>
                           <Badge variant="secondary" className="text-xs">
@@ -294,6 +351,40 @@ export const StudyPlan = ({ quizResult, learningStyles, onClear }: StudyPlanProp
           </div>
         </div>
       )}
+
+      {/* Resource Content Dialog */}
+      <Dialog open={!!selectedResource} onOpenChange={() => setSelectedResource(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {selectedResource && (
+                <>
+                  {(() => {
+                    const IconComponent = resourceIcons[selectedResource.type];
+                    return <IconComponent className="w-5 h-5 text-primary" />;
+                  })()}
+                  {selectedResource.title}
+                </>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedResource?.topic} • {selectedResource?.estimatedTime}
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh] pr-4">
+            {isLoadingContent ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                <span className="ml-2 text-muted-foreground">Loading content...</span>
+              </div>
+            ) : (
+              <div className="prose prose-sm dark:prose-invert max-w-none">
+                <div className="whitespace-pre-wrap text-foreground">{resourceContent}</div>
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
