@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, learningStyles, requestType, className, quizResult } = await req.json();
+    const { messages, learningStyles, requestType, className, quizResult, resourceType, resourceTitle, topic } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -142,6 +142,25 @@ Requirements:
 - Each question must have exactly 4 options
 - Include clear explanations for the correct answer
 - Cover key foundational concepts for this course`;
+    } else if (requestType === "resource-content") {
+      // Generate detailed content for a study resource
+      const resourceTypeGuide = {
+        video: "Create a video script/lecture outline with clear sections, key points, and visual cues. Include timestamps and talking points.",
+        reading: "Create comprehensive reading material with clear headings, explanations, examples, and key takeaways.",
+        practice: "Create practice exercises with problems, step-by-step solutions, and tips. Include varying difficulty levels.",
+        audio: "Create a podcast-style script with conversational explanations, mnemonics, and verbal cues for learning.",
+      };
+
+      systemPrompt = `You are AgentB creating detailed study content.
+      
+Topic: ${topic || "the subject"}
+Resource Title: ${resourceTitle}
+Resource Type: ${resourceType}
+${learningStyleContext}
+
+${resourceTypeGuide[resourceType as keyof typeof resourceTypeGuide] || "Create helpful educational content."}
+
+Create comprehensive, engaging content that helps the student understand and master this topic. Use clear formatting with headers, bullet points, and examples where appropriate.`;
     } else if (requestType === "placement-quiz") {
       systemPrompt = `You are AgentB, an intelligent AI tutor creating a placement quiz for a student.
       
@@ -295,6 +314,40 @@ When the user asks about their uploaded classes/syllabi, provide targeted help f
 
       return new Response(JSON.stringify({ error: "No quiz data returned" }), {
         status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Non-streaming response for resource content
+    if (requestType === "resource-content") {
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...messages,
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("AI gateway error:", response.status, errorText);
+        return new Response(JSON.stringify({ error: "Failed to generate content" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content || "Content generation failed.";
+      
+      return new Response(JSON.stringify({ content }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
