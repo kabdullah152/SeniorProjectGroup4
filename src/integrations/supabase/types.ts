@@ -121,6 +121,36 @@ export type Database = {
           },
         ]
       }
+      syllabi: {
+        Row: {
+          class_name: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          uploaded_at: string
+          user_id: string
+        }
+        Insert: {
+          class_name: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          uploaded_at?: string
+          user_id: string
+        }
+        Update: {
+          class_name?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          uploaded_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       universities: {
         Row: {
           created_at: string | null
