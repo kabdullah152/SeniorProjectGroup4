@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   id: string;
@@ -10,6 +11,7 @@ interface Message {
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-b-chat`;
 
 export const useAgentBChat = (learningStyles: string[] = []) => {
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -19,6 +21,21 @@ export const useAgentBChat = (learningStyles: string[] = []) => {
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Get access token on mount and when auth state changes
+  useEffect(() => {
+    const getToken = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setAccessToken(session?.access_token || null);
+    };
+    getToken();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAccessToken(session?.access_token || null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const sendMessage = useCallback(async (input: string) => {
     if (!input.trim() || isLoading) return;
@@ -51,7 +68,7 @@ export const useAgentBChat = (learningStyles: string[] = []) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${accessToken || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({
           messages: [...conversationHistory, { role: "user", content: input }],
@@ -145,7 +162,7 @@ export const useAgentBChat = (learningStyles: string[] = []) => {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, learningStyles, isLoading]);
+  }, [messages, learningStyles, isLoading, accessToken]);
 
   return { messages, sendMessage, isLoading };
 };
