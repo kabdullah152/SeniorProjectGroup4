@@ -169,6 +169,51 @@ export type Database = {
           },
         ]
       }
+      quiz_results: {
+        Row: {
+          class_name: string
+          completed_objectives: number[] | null
+          created_at: string
+          id: string
+          objectives: Json | null
+          resources: Json | null
+          score: number
+          strong_areas: string[]
+          total_questions: number
+          updated_at: string
+          user_id: string
+          weak_areas: string[]
+        }
+        Insert: {
+          class_name: string
+          completed_objectives?: number[] | null
+          created_at?: string
+          id?: string
+          objectives?: Json | null
+          resources?: Json | null
+          score: number
+          strong_areas?: string[]
+          total_questions: number
+          updated_at?: string
+          user_id: string
+          weak_areas?: string[]
+        }
+        Update: {
+          class_name?: string
+          completed_objectives?: number[] | null
+          created_at?: string
+          id?: string
+          objectives?: Json | null
+          resources?: Json | null
+          score?: number
+          strong_areas?: string[]
+          total_questions?: number
+          updated_at?: string
+          user_id?: string
+          weak_areas?: string[]
+        }
+        Relationships: []
+      }
       syllabi: {
         Row: {
           class_name: string
