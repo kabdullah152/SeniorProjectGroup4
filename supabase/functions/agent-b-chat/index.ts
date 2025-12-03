@@ -77,18 +77,33 @@ Generate learning objectives that:
 2. Prioritize topics based on importance (high/medium/low)
 3. Include specific, actionable goals
 
-Generate study resources with REAL external links:
-1. For VIDEO resources: Generate YouTube search URLs like "https://www.youtube.com/results?search_query=TOPIC+CLASSNAME+tutorial" 
-2. For READING resources: Link to educational sites like Khan Academy, Wikipedia, or search URLs
-3. Match the student's learning style (${learningStyles?.join(", ") || "general"})
-4. Focus on weak areas first
-5. Include source name (e.g., "YouTube", "Khan Academy", "Wikipedia")
+Generate study resources with REAL external links from DIVERSE educational platforms:
 
-URL EXAMPLES:
-- YouTube video: "https://www.youtube.com/results?search_query=chemical+bonding+chemistry+tutorial"
-- Khan Academy: "https://www.khanacademy.org/search?search_query=TOPIC"  
-- Wikipedia: "https://en.wikipedia.org/wiki/TOPIC"
-- Google Scholar: "https://scholar.google.com/scholar?q=TOPIC"`;
+VIDEO RESOURCES (prioritize these channels/platforms):
+- Crash Course: "https://www.youtube.com/results?search_query=crash+course+TOPIC"
+- Khan Academy videos: "https://www.youtube.com/results?search_query=khan+academy+TOPIC"
+- 3Blue1Brown (math): "https://www.youtube.com/results?search_query=3blue1brown+TOPIC"
+- Organic Chemistry Tutor: "https://www.youtube.com/results?search_query=organic+chemistry+tutor+TOPIC"
+- Professor Dave Explains: "https://www.youtube.com/results?search_query=professor+dave+explains+TOPIC"
+- MIT OpenCourseWare: "https://www.youtube.com/results?search_query=MIT+opencourseware+TOPIC"
+
+READING/ARTICLE RESOURCES:
+- Khan Academy: "https://www.khanacademy.org/search?search_query=TOPIC"
+- Coursera: "https://www.coursera.org/search?query=TOPIC"
+- edX: "https://www.edx.org/search?q=TOPIC"
+- GeeksForGeeks (for CS): "https://www.geeksforgeeks.org/search?q=TOPIC"
+- W3Schools (for programming): "https://www.w3schools.com/search/search.asp?q=TOPIC"
+- Brilliant.org: "https://brilliant.org/search/?q=TOPIC"
+- MIT OpenCourseWare: "https://ocw.mit.edu/search/?q=TOPIC"
+
+PRACTICE RESOURCES:
+- LeetCode (CS): "https://leetcode.com/problemset/?search=TOPIC"
+- HackerRank (CS): "https://www.hackerrank.com/domains?filters[skills]=TOPIC"
+- Quizlet: "https://quizlet.com/search?query=TOPIC"
+
+DO NOT USE Wikipedia. Prefer educational platforms with structured learning content.
+Match resources to the student's learning style (${learningStyles?.join(", ") || "general"}).
+Include a good mix of video tutorials, reading materials, and practice exercises.`;
 
       toolConfig = {
         tools: [
