@@ -31,7 +31,16 @@ interface InteractiveExerciseProps {
   learningStyles: string[];
 }
 
+interface ExerciseSet {
+  id: number;
+  title: string;
+  description: string;
+  exercises: Exercise[];
+}
+
 export const InteractiveExercise = ({ isOpen, onClose, className, weakAreas, learningStyles }: InteractiveExerciseProps) => {
+  const [exerciseSets, setExerciseSets] = useState<ExerciseSet[]>([]);
+  const [selectedSet, setSelectedSet] = useState<ExerciseSet | null>(null);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState("");
@@ -42,19 +51,14 @@ export const InteractiveExercise = ({ isOpen, onClose, className, weakAreas, lea
   const [isComplete, setIsComplete] = useState(false);
   const { toast } = useToast();
 
-  const generateExercises = async () => {
-    setIsLoading(true);
-    setExercises([]);
-    setCurrentIndex(0);
-    setUserAnswer("");
-    setShowHint(false);
-    setShowSolution(false);
-    setCompleted(new Set());
-    setIsComplete(false);
-
+  const generateSingleSet = async (session: any, variant: number): Promise<ExerciseSet | null> => {
+    const focusDescriptions = [
+      "beginner-friendly problems with step-by-step guidance",
+      "intermediate challenges requiring applied knowledge",
+      "advanced problems testing deeper understanding"
+    ];
+    
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-b-chat`,
         {
@@ -66,7 +70,7 @@ export const InteractiveExercise = ({ isOpen, onClose, className, weakAreas, lea
           body: JSON.stringify({
             messages: [{
               role: "user",
-              content: `Generate 5 practice exercises for these topics: ${weakAreas.join(", ")}. Each exercise should have a problem, a hint, and a detailed solution.`
+              content: `Generate 5 ${focusDescriptions[variant]} for these topics: ${weakAreas.join(", ")}. Each exercise should have a problem, a hint, and a detailed solution.`
             }],
             learningStyles,
             requestType: "interactive-exercises",
@@ -76,14 +80,53 @@ export const InteractiveExercise = ({ isOpen, onClose, className, weakAreas, lea
         }
       );
 
-      if (!response.ok) throw new Error("Failed to generate exercises");
+      if (!response.ok) return null;
 
       const data = await response.json();
       if (data.exercises && data.exercises.length > 0) {
-        setExercises(data.exercises.slice(0, 5));
-      } else {
-        throw new Error("No exercises returned");
+        const titles = ["Beginner Exercises", "Intermediate Exercises", "Advanced Exercises"];
+        return {
+          id: variant + 1,
+          title: titles[variant],
+          description: focusDescriptions[variant],
+          exercises: data.exercises.slice(0, 5)
+        };
       }
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  const generateExerciseSets = async () => {
+    setIsLoading(true);
+    setExerciseSets([]);
+    setSelectedSet(null);
+    setExercises([]);
+    setCurrentIndex(0);
+    setUserAnswer("");
+    setShowHint(false);
+    setShowSolution(false);
+    setCompleted(new Set());
+    setIsComplete(false);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // Generate 3 exercise sets in parallel
+      const results = await Promise.all([
+        generateSingleSet(session, 0),
+        generateSingleSet(session, 1),
+        generateSingleSet(session, 2)
+      ]);
+
+      const validSets = results.filter((set): set is ExerciseSet => set !== null);
+      
+      if (validSets.length === 0) {
+        throw new Error("No exercise sets generated");
+      }
+      
+      setExerciseSets(validSets);
     } catch (error) {
       console.error("Exercise generation error:", error);
       toast({
@@ -94,6 +137,11 @@ export const InteractiveExercise = ({ isOpen, onClose, className, weakAreas, lea
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const selectExerciseSet = (set: ExerciseSet) => {
+    setSelectedSet(set);
+    setExercises(set.exercises);
   };
 
   const markComplete = () => {
@@ -153,8 +201,8 @@ export const InteractiveExercise = ({ isOpen, onClose, className, weakAreas, lea
         </DialogHeader>
 
         <ScrollArea className="max-h-[65vh]">
-          {/* Start Screen */}
-          {exercises.length === 0 && !isLoading && (
+          {/* Start Screen - Generate Exercise Sets */}
+          {exerciseSets.length === 0 && !selectedSet && !isLoading && (
             <div className="text-center py-8 space-y-4">
               <p className="text-muted-foreground">
                 Practice problems tailored to help you master:
@@ -164,8 +212,38 @@ export const InteractiveExercise = ({ isOpen, onClose, className, weakAreas, lea
                   <Badge key={idx} variant="secondary">{area}</Badge>
                 ))}
               </div>
-              <Button onClick={generateExercises} className="mt-4">
-                Generate Exercises
+              <Button onClick={generateExerciseSets} className="mt-4">
+                Generate Exercise Options
+              </Button>
+            </div>
+          )}
+
+          {/* Exercise Set Selection Screen */}
+          {exerciseSets.length > 0 && !selectedSet && !isLoading && (
+            <div className="space-y-4 pr-4">
+              <p className="text-sm text-muted-foreground text-center">
+                Choose an exercise set:
+              </p>
+              <div className="grid gap-3">
+                {exerciseSets.map((set) => (
+                  <div
+                    key={set.id}
+                    onClick={() => selectExerciseSet(set)}
+                    className="p-4 rounded-lg border border-border bg-card hover:border-secondary/50 hover:shadow-md transition-all cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium text-foreground">{set.title}</h4>
+                        <p className="text-sm text-muted-foreground capitalize">{set.description}</p>
+                      </div>
+                      <Badge variant="secondary">{set.exercises.length} exercises</Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Button variant="outline" onClick={generateExerciseSets} className="w-full">
+                <RotateCcw className="mr-2 w-4 h-4" />
+                Generate New Options
               </Button>
             </div>
           )}
@@ -287,9 +365,16 @@ export const InteractiveExercise = ({ isOpen, onClose, className, weakAreas, lea
                 You practiced {completed.size} out of {exercises.length} problems.
               </p>
               <div className="flex justify-center gap-3 pt-4">
-                <Button variant="outline" onClick={generateExercises}>
+                <Button variant="outline" onClick={() => {
+                  setSelectedSet(null);
+                  setExercises([]);
+                  setIsComplete(false);
+                }}>
                   <RotateCcw className="mr-2 w-4 h-4" />
-                  More Exercises
+                  Choose Another Set
+                </Button>
+                <Button variant="outline" onClick={generateExerciseSets}>
+                  Generate New Sets
                 </Button>
                 <Button onClick={onClose}>Done</Button>
               </div>

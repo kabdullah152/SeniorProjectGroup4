@@ -31,7 +31,16 @@ interface MiniQuizProps {
   learningStyles: string[];
 }
 
+interface QuizSet {
+  id: number;
+  title: string;
+  description: string;
+  questions: Question[];
+}
+
 export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles }: MiniQuizProps) => {
+  const [quizSets, setQuizSets] = useState<QuizSet[]>([]);
+  const [selectedSet, setSelectedSet] = useState<QuizSet | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
@@ -41,18 +50,14 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
   const [isComplete, setIsComplete] = useState(false);
   const { toast } = useToast();
 
-  const generateQuiz = async () => {
-    setIsLoading(true);
-    setQuestions([]);
-    setCurrentIndex(0);
-    setSelectedAnswer(null);
-    setIsAnswered(false);
-    setScore(0);
-    setIsComplete(false);
-
+  const generateSingleQuiz = async (session: any, variant: number): Promise<QuizSet | null> => {
+    const focusDescriptions = [
+      "foundational concepts and basic understanding",
+      "applied knowledge and problem-solving",
+      "advanced topics and deeper comprehension"
+    ];
+    
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-b-chat`,
         {
@@ -64,7 +69,7 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
           body: JSON.stringify({
             messages: [{
               role: "user",
-              content: `Generate a quick 5-question mini-quiz focusing on these weak areas: ${weakAreas.join(", ")}. Make questions targeted and helpful for reviewing these specific topics.`
+              content: `Generate a 5-question mini-quiz focusing on ${focusDescriptions[variant]} for these topics: ${weakAreas.join(", ")}. Make questions targeted and helpful.`
             }],
             learningStyles,
             requestType: "mini-quiz",
@@ -74,24 +79,67 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
         }
       );
 
-      if (!response.ok) throw new Error("Failed to generate quiz");
+      if (!response.ok) return null;
 
       const data = await response.json();
       if (data.questions && data.questions.length > 0) {
-        setQuestions(data.questions.slice(0, 5));
-      } else {
-        throw new Error("No questions returned");
+        const titles = ["Foundations Quiz", "Applied Quiz", "Advanced Quiz"];
+        return {
+          id: variant + 1,
+          title: titles[variant],
+          description: focusDescriptions[variant],
+          questions: data.questions.slice(0, 5)
+        };
       }
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  const generateQuizSets = async () => {
+    setIsLoading(true);
+    setQuizSets([]);
+    setSelectedSet(null);
+    setQuestions([]);
+    setCurrentIndex(0);
+    setSelectedAnswer(null);
+    setIsAnswered(false);
+    setScore(0);
+    setIsComplete(false);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // Generate 3 quiz sets in parallel
+      const results = await Promise.all([
+        generateSingleQuiz(session, 0),
+        generateSingleQuiz(session, 1),
+        generateSingleQuiz(session, 2)
+      ]);
+
+      const validSets = results.filter((set): set is QuizSet => set !== null);
+      
+      if (validSets.length === 0) {
+        throw new Error("No quizzes generated");
+      }
+      
+      setQuizSets(validSets);
     } catch (error) {
       console.error("Mini quiz error:", error);
       toast({
         title: "Quiz Generation Failed",
-        description: "Could not generate quiz. Please try again.",
+        description: "Could not generate quizzes. Please try again.",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const selectQuizSet = (set: QuizSet) => {
+    setSelectedSet(set);
+    setQuestions(set.questions);
   };
 
   const handleAnswer = () => {
@@ -149,8 +197,8 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
           </DialogDescription>
         </DialogHeader>
 
-        {/* Start Screen */}
-        {questions.length === 0 && !isLoading && (
+        {/* Start Screen - Generate Quiz Sets */}
+        {quizSets.length === 0 && !selectedSet && !isLoading && (
           <div className="text-center py-8 space-y-4">
             <p className="text-muted-foreground">
               This mini-quiz will test your understanding of:
@@ -160,8 +208,38 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
                 <Badge key={idx} variant="secondary">{area}</Badge>
               ))}
             </div>
-            <Button onClick={generateQuiz} className="mt-4">
-              Start Mini Quiz
+            <Button onClick={generateQuizSets} className="mt-4">
+              Generate Quiz Options
+            </Button>
+          </div>
+        )}
+
+        {/* Quiz Selection Screen */}
+        {quizSets.length > 0 && !selectedSet && !isLoading && (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground text-center">
+              Choose a quiz to take:
+            </p>
+            <div className="grid gap-3">
+              {quizSets.map((set) => (
+                <div
+                  key={set.id}
+                  onClick={() => selectQuizSet(set)}
+                  className="p-4 rounded-lg border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all cursor-pointer"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium text-foreground">{set.title}</h4>
+                      <p className="text-sm text-muted-foreground capitalize">{set.description}</p>
+                    </div>
+                    <Badge variant="secondary">{set.questions.length} questions</Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Button variant="outline" onClick={generateQuizSets} className="w-full">
+              <RotateCcw className="mr-2 w-4 h-4" />
+              Generate New Options
             </Button>
           </div>
         )}
@@ -271,9 +349,16 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
                   : "Keep studying these topics."}
             </p>
             <div className="flex justify-center gap-3 pt-4">
-              <Button variant="outline" onClick={generateQuiz}>
+              <Button variant="outline" onClick={() => {
+                setSelectedSet(null);
+                setQuestions([]);
+                setIsComplete(false);
+              }}>
                 <RotateCcw className="mr-2 w-4 h-4" />
-                Try Again
+                Choose Another Quiz
+              </Button>
+              <Button variant="outline" onClick={generateQuizSets}>
+                Generate New Quizzes
               </Button>
               <Button onClick={onClose}>Done</Button>
             </div>
