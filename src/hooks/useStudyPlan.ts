@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -47,6 +47,7 @@ export const useStudyPlan = (learningStyles: string[]) => {
   const [classPlans, setClassPlans] = useState<Map<string, ClassStudyPlan>>(new Map());
   const [activeClass, setActiveClass] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const { toast } = useToast();
 
   // Get current active plan
@@ -58,6 +59,83 @@ export const useStudyPlan = (learningStyles: string[]) => {
 
   // Get all completed classes
   const completedClasses = Array.from(classPlans.keys());
+
+  // Load quiz results from database on mount
+  useEffect(() => {
+    const loadQuizResults = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setIsInitialized(true);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('quiz_results')
+        .select('*')
+        .eq('user_id', session.user.id);
+
+      if (error) {
+        console.error('Error loading quiz results:', error);
+        setIsInitialized(true);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const loadedPlans = new Map<string, ClassStudyPlan>();
+        
+        data.forEach((row) => {
+          const plan: ClassStudyPlan = {
+            quizResult: {
+              className: row.class_name,
+              score: row.score,
+              totalQuestions: row.total_questions,
+              weakAreas: row.weak_areas || [],
+              strongAreas: row.strong_areas || [],
+            },
+            objectives: (row.objectives as unknown as LearningObjective[]) || [],
+            resources: (row.resources as unknown as StudyResource[]) || [],
+            completedObjectives: new Set(row.completed_objectives || []),
+          };
+          loadedPlans.set(row.class_name, plan);
+        });
+
+        setClassPlans(loadedPlans);
+        // Set first class as active if none selected
+        const firstClass = data[0].class_name;
+        setActiveClass(firstClass);
+      }
+      
+      setIsInitialized(true);
+    };
+
+    loadQuizResults();
+  }, []);
+
+  // Save quiz result to database
+  const saveQuizResult = useCallback(async (
+    plan: ClassStudyPlan,
+    userId: string
+  ) => {
+    const { error } = await supabase
+      .from('quiz_results')
+      .upsert(
+        {
+          user_id: userId,
+          class_name: plan.quizResult.className,
+          score: plan.quizResult.score,
+          total_questions: plan.quizResult.totalQuestions,
+          weak_areas: plan.quizResult.weakAreas,
+          strong_areas: plan.quizResult.strongAreas,
+          objectives: plan.objectives as unknown as Record<string, unknown>,
+          resources: plan.resources as unknown as Record<string, unknown>,
+          completed_objectives: Array.from(plan.completedObjectives),
+        } as never
+      );
+
+    if (error) {
+      console.error('Error saving quiz result:', error);
+    }
+  }, []);
 
   const generateStudyPlan = useCallback(async (result: QuizResult) => {
     setIsLoading(true);
@@ -110,6 +188,11 @@ export const useStudyPlan = (learningStyles: string[]) => {
       });
       setActiveClass(result.className);
 
+      // Save to database
+      if (session?.user?.id) {
+        await saveQuizResult(newPlan, session.user.id);
+      }
+
       toast({
         title: "Study Plan Created",
         description: `Personalized plan for ${result.className} is ready!`,
@@ -124,14 +207,16 @@ export const useStudyPlan = (learningStyles: string[]) => {
     } finally {
       setIsLoading(false);
     }
-  }, [learningStyles, toast]);
+  }, [learningStyles, toast, saveQuizResult]);
 
   const setQuizResultAndGenerate = useCallback((result: QuizResult) => {
     generateStudyPlan(result);
   }, [generateStudyPlan]);
 
-  const toggleObjective = useCallback((id: number) => {
+  const toggleObjective = useCallback(async (id: number) => {
     if (!activeClass) return;
+    
+    const { data: { session } } = await supabase.auth.getSession();
     
     setClassPlans(prev => {
       const updated = new Map(prev);
@@ -143,14 +228,31 @@ export const useStudyPlan = (learningStyles: string[]) => {
         } else {
           newCompleted.add(id);
         }
-        updated.set(activeClass, { ...plan, completedObjectives: newCompleted });
+        const updatedPlan = { ...plan, completedObjectives: newCompleted };
+        updated.set(activeClass, updatedPlan);
+        
+        // Save to database
+        if (session?.user?.id) {
+          saveQuizResult(updatedPlan, session.user.id);
+        }
       }
       return updated;
     });
-  }, [activeClass]);
+  }, [activeClass, saveQuizResult]);
 
-  const clearStudyPlan = useCallback(() => {
+  const clearStudyPlan = useCallback(async () => {
     if (!activeClass) return;
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    // Delete from database
+    if (session?.user?.id) {
+      await supabase
+        .from('quiz_results')
+        .delete()
+        .eq('user_id', session.user.id)
+        .eq('class_name', activeClass);
+    }
     
     setClassPlans(prev => {
       const updated = new Map(prev);
@@ -183,5 +285,6 @@ export const useStudyPlan = (learningStyles: string[]) => {
     activeClass,
     setActiveClass,
     classPlans,
+    isInitialized,
   };
 };
