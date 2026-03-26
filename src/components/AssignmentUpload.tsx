@@ -36,7 +36,7 @@ interface Assignment {
   learning_objectives: string[] | null;
   uploaded_at: string;
   assessment_type: string | null;
-  assessment_metadata: Record<string, unknown> | null;
+  assessment_metadata: unknown;
 }
 
 interface Syllabus {
