@@ -46,10 +46,11 @@ interface Syllabus {
 
 interface AssignmentUploadProps {
   learningStyles: string[];
+  courseName?: string;
   onAssignmentParsed?: (assignment: Assignment) => void;
 }
 
-export const AssignmentUpload = ({ learningStyles, onAssignmentParsed }: AssignmentUploadProps) => {
+export const AssignmentUpload = ({ learningStyles, courseName, onAssignmentParsed }: AssignmentUploadProps) => {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [syllabi, setSyllabi] = useState<Syllabus[]>([]);
   const [isUploading, setIsUploading] = useState(false);
