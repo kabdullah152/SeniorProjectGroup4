@@ -8,6 +8,7 @@ import Auth from "./pages/Auth";
 import CalendarPage from "./pages/CalendarPage";
 import Profile from "./pages/Profile";
 import ReadAloudDemo from "./pages/ReadAloudDemo";
+import CoursePage from "./pages/CoursePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
