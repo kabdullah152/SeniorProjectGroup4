@@ -379,6 +379,7 @@ export type Database = {
           class_name: string
           created_at: string | null
           id: string
+          is_archived: boolean
           professor: string | null
           semester: string | null
           user_id: string
@@ -388,6 +389,7 @@ export type Database = {
           class_name: string
           created_at?: string | null
           id?: string
+          is_archived?: boolean
           professor?: string | null
           semester?: string | null
           user_id: string
@@ -397,6 +399,7 @@ export type Database = {
           class_name?: string
           created_at?: string | null
           id?: string
+          is_archived?: boolean
           professor?: string | null
           semester?: string | null
           user_id?: string
