@@ -349,6 +349,7 @@ export const AssignmentUpload = ({ learningStyles, courseName, onAssignmentParse
               <DialogTitle>Upload Assignment</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 pt-4">
+              {!courseName && (
               <div className="space-y-2">
                 <Label htmlFor="class">Class *</Label>
                 <Select value={selectedClass} onValueChange={setSelectedClass}>
@@ -369,6 +370,7 @@ export const AssignmentUpload = ({ learningStyles, courseName, onAssignmentParse
                   </p>
                 )}
               </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="title">Assignment Title *</Label>
