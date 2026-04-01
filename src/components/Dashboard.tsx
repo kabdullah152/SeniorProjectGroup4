@@ -133,6 +133,11 @@ export const Dashboard = ({ learningStyles, onOpenChat, onRetakeQuiz }: Dashboar
               <h1 className="text-2xl font-bold text-foreground">AgentB</h1>
             </button>
             <div className="flex items-center gap-3">
+              <DashboardReadAloud
+                isActive={isReadAloudActive}
+                onToggle={() => setIsReadAloudActive((v) => !v)}
+                contentRef={mainContentRef}
+              />
               <Button
                 variant="outline"
                 onClick={() => navigate("/profile")}
