@@ -412,6 +412,9 @@ const CoursePage = () => {
           </div>
         </Card>
 
+        {/* Assignment Upload */}
+        <AssignmentUpload learningStyles={learningStyles} courseName={decodedClassName} />
+
         {/* Adaptive Learning Section */}
         <Card className="p-6 border-border shadow-[var(--shadow-soft)]">
           <div className="flex items-center gap-3 mb-6">

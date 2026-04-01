@@ -151,8 +151,6 @@ export const Dashboard = ({ learningStyles, onOpenChat, onRetakeQuiz }: Dashboar
         {/* Course Hub */}
         <CourseHub />
 
-        {/* Assignment Upload */}
-        <AssignmentUpload learningStyles={learningStyles} />
 
         {/* Test Reminders */}
         <TestReminders />
