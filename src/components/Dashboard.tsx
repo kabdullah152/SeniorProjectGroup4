@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import {
   GraduationCap, Target, TrendingUp, CheckCircle2, FileQuestion, Lightbulb, 
   ClipboardList, Bell, BookMarked, AlertTriangle, Star, Zap, Clock
 } from "lucide-react";
+import { DashboardReadAloud } from "./DashboardReadAloud";
 import { SyllabusUpload } from "./SyllabusUpload";
 import { AssignmentUpload } from "./AssignmentUpload";
 import { PlacementQuiz } from "./PlacementQuiz";
