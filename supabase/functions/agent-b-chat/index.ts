@@ -308,14 +308,14 @@ Each must include a helpful hint and a detailed step-by-step solution.`;
     } else if (requestType === "placement-quiz-interactive") {
       // Return structured JSON for interactive quiz
       useToolCalling = true;
-      systemPrompt = `You are AgentB creating a rigorous placement quiz that assesses REAL understanding through application. Generate exactly 20 multiple-choice questions for: ${className || "the subject"}.
+      systemPrompt = `You are AgentB creating a rigorous placement quiz that assesses REAL understanding through application. Generate exactly 10 multiple-choice questions for: ${className || "the subject"}.
 
 ${learningStyleContext}
 ${syllabusTopics}
 
 CRITICAL — QUESTION QUALITY RULES:
-- 80% of questions (16 out of 20) MUST be application/problem-solving questions
-- Maximum 20% (4 out of 20) may be conceptual — and even those must test understanding, NOT simple recall
+- 80% of questions (8 out of 10) MUST be application/problem-solving questions
+- Maximum 20% (2 out of 10) may be conceptual — and even those must test understanding, NOT simple recall
 - NEVER generate basic definition questions like "What is X?", "Define Y", or "Which term describes Z?"
 - Every question must require the student to: compute, solve, apply a formula, analyze a scenario, debug, trace logic, or work through multi-step reasoning
 
@@ -326,22 +326,18 @@ SUBJECT-AWARE QUESTION FORMATTING (detect subject from course name/syllabus):
 - Physics: formulas with given values, unit-based problems, applied force/energy/motion scenarios
 - General: scenario-based analysis requiring reasoning and application
 
-EXAMPLE TRANSFORMATIONS (FOLLOW THESE):
-❌ "What is a derivative?" → ✅ "Find the derivative of f(x) = 3x² + 2x − 5"
-❌ "What is a scalar?" → ✅ "A force of 10N is applied at 30°. Find the horizontal component."
-❌ "Define Big-O notation" → ✅ "What is the time complexity of this nested loop: for(i=0;i<n;i++) for(j=0;j<n;j++) sum++?"
-❌ "What is pH?" → ✅ "Calculate the pH of a 0.01M HCl solution"
-
 SYLLABUS ALIGNMENT:
 - If syllabus topics are provided above, derive ALL questions from those specific topics
 - Do NOT invent topics outside the syllabus
-- Questions should reflect the expected rigor and depth of this specific course
 
-Structure the questions in 4 sections:
-1. **Section 1: Foundational Application (Questions 1-5)** - Apply basic concepts with straightforward problems
-2. **Section 2: Core Problem Solving (Questions 6-10)** - Multi-step problems using essential course principles
-3. **Section 3: Applied Analysis (Questions 11-15)** - Real-world scenarios and complex applications
-4. **Section 4: Advanced Challenges (Questions 16-20)** - Challenging multi-concept problems
+Structure in 2 sections:
+1. **Foundational Application (Questions 1-5)** - Apply basic concepts
+2. **Advanced Problem Solving (Questions 6-10)** - Multi-step problems
+
+Requirements for EACH question:
+- Exactly 4 distinct options
+- Include a brief explanation showing solution steps
+- Cover different subtopics`;
 
 Requirements for EACH question:
 - Must have exactly 4 distinct options (no duplicates, no "all of the above")
