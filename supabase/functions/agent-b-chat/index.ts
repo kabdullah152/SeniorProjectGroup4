@@ -653,24 +653,78 @@ When the user asks about their uploaded classes/syllabi, provide targeted help f
         });
       }
 
-      const data = await response.json();
-      console.log("Quiz response:", JSON.stringify(data).slice(0, 500));
+      // Read response as text first to handle potential truncation
+      const responseText = await response.text();
+      console.log("Quiz response length:", responseText.length, "first 500:", responseText.slice(0, 500));
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (jsonError) {
+        console.error("Failed to parse AI response as JSON, length:", responseText.length, "error:", jsonError);
+        // Try to salvage truncated JSON from tool call arguments
+        const argsMatch = responseText.match(/"arguments"\s*:\s*"([\s\S]*?)(?:"\s*}\s*]\s*}\s*}\s*]\s*}|$)/);
+        if (argsMatch) {
+          try {
+            let argsStr = argsMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n').replace(/\\\\/g, '\\');
+            // Try to fix truncated JSON by closing arrays/objects
+            let attempt = argsStr;
+            for (let i = 0; i < 5; i++) {
+              try {
+                const parsed = JSON.parse(attempt);
+                if (parsed.questions?.length > 0) {
+                  console.log("Salvaged", parsed.questions.length, "questions from truncated response");
+                  return new Response(JSON.stringify(parsed), {
+                    headers: { ...corsHeaders, "Content-Type": "application/json" },
+                  });
+                }
+                break;
+              } catch {
+                attempt += ']}';
+              }
+            }
+          } catch { /* ignore salvage failure */ }
+        }
+        return new Response(JSON.stringify({ error: "AI response was truncated. Please try again." }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
 
       // Extract questions from tool call
       const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
       if (toolCall?.function?.arguments) {
         try {
-          const quizData = JSON.parse(toolCall.function.arguments);
+          const argsStr = typeof toolCall.function.arguments === 'string' 
+            ? toolCall.function.arguments 
+            : JSON.stringify(toolCall.function.arguments);
+          const quizData = JSON.parse(argsStr);
           return new Response(JSON.stringify(quizData), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         } catch (parseError) {
-          console.error("Failed to parse quiz data:", parseError);
+          console.error("Failed to parse quiz data:", parseError, "raw:", typeof toolCall.function.arguments === 'string' ? toolCall.function.arguments.slice(0, 200) : 'non-string');
           return new Response(JSON.stringify({ error: "Failed to parse quiz data" }), {
             status: 500,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
+      }
+
+      // Fallback: check if the content itself contains JSON
+      const content = data.choices?.[0]?.message?.content;
+      if (content) {
+        try {
+          const jsonMatch = content.match(/\{[\s\S]*"questions"[\s\S]*\}/);
+          if (jsonMatch) {
+            const quizData = JSON.parse(jsonMatch[0]);
+            if (quizData.questions?.length > 0) {
+              return new Response(JSON.stringify(quizData), {
+                headers: { ...corsHeaders, "Content-Type": "application/json" },
+              });
+            }
+          }
+        } catch { /* ignore */ }
       }
 
       return new Response(JSON.stringify({ error: "No quiz data returned" }), {
