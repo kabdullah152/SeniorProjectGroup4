@@ -524,6 +524,12 @@ const CoursePage = () => {
           )}
         </Card>
 
+        {/* Chapter Breakdowns - Real data from syllabus */}
+        <ChapterBreakdowns className={decodedClassName} />
+
+        {/* Course Textbooks */}
+        <CourseTextbooks className={decodedClassName} />
+
         {/* Placement Quiz */}
         <PlacementQuiz
           learningStyles={learningStyles}
