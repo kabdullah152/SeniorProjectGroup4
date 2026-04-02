@@ -89,8 +89,9 @@ export const SyllabusUpload = ({ onUploadComplete }: SyllabusUploadProps) => {
     setIsUploading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) throw new Error("Not authenticated. Please sign out and sign back in.");
+      const user = session.user;
 
       const filePath = `${user.id}/${Date.now()}-${selectedFile.name}`;
 
