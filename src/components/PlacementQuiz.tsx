@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { MathText } from "@/components/MathText";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -352,7 +353,7 @@ export const PlacementQuiz = ({ learningStyles, onQuizComplete, refreshTrigger, 
 
           {/* Question */}
           <div className="p-4 rounded-xl bg-muted/30 border border-border">
-            <p className="text-lg font-medium text-foreground mb-6">{currentQuestion?.question}</p>
+            <p className="text-lg font-medium text-foreground mb-6"><MathText text={currentQuestion?.question || ""} /></p>
 
             <RadioGroup
               value={selectedAnswer}
@@ -386,7 +387,7 @@ export const PlacementQuiz = ({ learningStyles, onQuizComplete, refreshTrigger, 
                       htmlFor={`option-${idx}`}
                       className={`flex-1 cursor-pointer ${showResult ? "cursor-default" : ""}`}
                     >
-                      {option}
+                      <MathText text={option} />
                     </Label>
                     {showResult && isCorrectOption && (
                       <CheckCircle2 className="w-5 h-5 text-green-500" />
@@ -431,7 +432,7 @@ export const PlacementQuiz = ({ learningStyles, onQuizComplete, refreshTrigger, 
           {showResult && currentQuestion?.explanation && (
             <div className={`p-4 rounded-lg border ${isCorrect ? "bg-green-500/5 border-green-500/20" : "bg-amber-500/5 border-amber-500/20"}`}>
               <p className="text-sm font-medium mb-1">{isCorrect ? "✓ Correct!" : "✗ Not quite right"}</p>
-              <p className="text-sm text-muted-foreground">{currentQuestion.explanation}</p>
+              <p className="text-sm text-muted-foreground"><MathText text={currentQuestion.explanation} /></p>
             </div>
           )}
 

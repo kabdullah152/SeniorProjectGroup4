@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { MathText } from "@/components/MathText";
 import {
   Dialog,
   DialogContent,
@@ -258,7 +259,7 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
             </div>
 
             <div className="p-4 rounded-lg bg-muted/50 border border-border">
-              <p className="font-medium text-foreground">{currentQuestion?.question}</p>
+              <p className="font-medium text-foreground"><MathText text={currentQuestion?.question || ""} /></p>
             </div>
 
             <RadioGroup
@@ -290,7 +291,7 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
                       htmlFor={`option-${idx}`} 
                       className={`flex-1 cursor-pointer ${isAnswered ? "cursor-default" : ""}`}
                     >
-                      {option}
+                      <MathText text={option} />
                     </Label>
                     {isAnswered && isCorrect && (
                       <CheckCircle2 className="w-5 h-5 text-green-500" />
@@ -306,7 +307,7 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
             {isAnswered && (
               <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
                 <p className="text-sm text-foreground">
-                  <strong>Explanation:</strong> {currentQuestion?.explanation}
+                  <strong>Explanation:</strong> <MathText text={currentQuestion?.explanation || ""} />
                 </p>
               </div>
             )}

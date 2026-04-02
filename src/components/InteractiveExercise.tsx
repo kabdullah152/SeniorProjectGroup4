@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { MathText } from "@/components/MathText";
 import {
   Dialog,
   DialogContent,
@@ -282,7 +283,7 @@ export const InteractiveExercise = ({ isOpen, onClose, className, weakAreas, lea
               {/* Problem */}
               <div className="p-4 rounded-lg bg-muted/50 border border-border">
                 <h4 className="font-semibold text-foreground mb-2">Problem:</h4>
-                <p className="text-foreground whitespace-pre-wrap">{currentExercise?.problem}</p>
+                <p className="text-foreground whitespace-pre-wrap"><MathText text={currentExercise?.problem || ""} /></p>
               </div>
 
               {/* User Answer Area */}
@@ -311,7 +312,7 @@ export const InteractiveExercise = ({ isOpen, onClose, className, weakAreas, lea
                     <Lightbulb className="w-4 h-4 text-amber-600" />
                     <span className="font-medium text-foreground">Hint</span>
                   </div>
-                  <p className="text-sm text-foreground">{currentExercise?.hint}</p>
+                  <p className="text-sm text-foreground"><MathText text={currentExercise?.hint || ""} /></p>
                 </div>
               )}
 
@@ -322,7 +323,7 @@ export const InteractiveExercise = ({ isOpen, onClose, className, weakAreas, lea
                     <CheckCircle2 className="w-4 h-4 text-green-600" />
                     <span className="font-medium text-foreground">Solution</span>
                   </div>
-                  <p className="text-sm text-foreground whitespace-pre-wrap">{currentExercise?.solution}</p>
+                  <p className="text-sm text-foreground whitespace-pre-wrap"><MathText text={currentExercise?.solution || ""} /></p>
                 </div>
               )}
 

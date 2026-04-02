@@ -209,7 +209,8 @@ EXAMPLE TRANSFORMATIONS:
 ❌ "What is a scalar?" → ✅ "A force of 10N is applied at 30°. Find the horizontal component."
 ❌ "Define polymorphism" → ✅ "Given class Animal with method speak(), what output does this code produce: ..."
 
-Generate exactly 5 multiple-choice questions with 4 options each and clear explanations.`;
+Generate exactly 5 multiple-choice questions with 4 options each and clear explanations.
+IMPORTANT: Use LaTeX math notation with dollar sign delimiters for ALL mathematical expressions (e.g. $f(x) = 3x^2$, $\\theta = 30^\\circ$). This applies to questions, options, AND explanations.`;
 
       toolConfig = {
         tools: [
@@ -268,7 +269,8 @@ SUBJECT-AWARE FORMATTING:
 - Physics: Provide scenarios with given values requiring formula application and numerical solutions
 
 Generate exactly 5 practice problems with varying difficulty (easy, medium, hard).
-Each must include a helpful hint and a detailed step-by-step solution.`;
+Each must include a helpful hint and a detailed step-by-step solution.
+IMPORTANT: Use LaTeX math notation with dollar sign delimiters for ALL mathematical expressions (e.g. $f(x) = 3x^2$, $\\theta = 30^\\circ$). This applies to problems, hints, AND solutions.`;
 
       toolConfig = {
         tools: [
@@ -337,7 +339,8 @@ Structure in 2 sections:
 Requirements for EACH question:
 - Exactly 4 distinct options
 - Include a brief explanation showing solution steps
-- Cover different subtopics`;
+- Cover different subtopics
+- IMPORTANT: Use LaTeX math notation with dollar sign delimiters for ALL mathematical expressions. For example: $f(x) = 3x^2 + 2x - 5$, $\\mathbf{p} = [x, y]^T$, $\\theta = 90^\\circ$. This applies to questions, options, AND explanations.`;
     } else if (requestType === "resource-content") {
       // Generate detailed content for a study resource
       const resourceTypeGuide = {
