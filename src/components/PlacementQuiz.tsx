@@ -432,7 +432,7 @@ export const PlacementQuiz = ({ learningStyles, onQuizComplete, refreshTrigger, 
           {showResult && currentQuestion?.explanation && (
             <div className={`p-4 rounded-lg border ${isCorrect ? "bg-green-500/5 border-green-500/20" : "bg-amber-500/5 border-amber-500/20"}`}>
               <p className="text-sm font-medium mb-1">{isCorrect ? "✓ Correct!" : "✗ Not quite right"}</p>
-              <p className="text-sm text-muted-foreground">{currentQuestion.explanation}</p>
+              <p className="text-sm text-muted-foreground"><MathText text={currentQuestion.explanation} /></p>
             </div>
           )}
 
