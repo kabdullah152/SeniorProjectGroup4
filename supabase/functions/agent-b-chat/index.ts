@@ -184,19 +184,32 @@ Include mix of: 2-3 videos, 2-3 reading materials, 1-2 practice resources.`;
       // Generate a quick 5-question mini quiz for weak areas
       useToolCalling = true;
       const focusAreas = requestWeakAreas || [];
-      systemPrompt = `You are AgentB creating a quick mini-quiz to help a student review their weak areas.
+      systemPrompt = `You are AgentB creating a mini-quiz to test APPLIED understanding.
 
 Class: ${className || "the course"}
 Focus Areas: ${focusAreas.join(", ") || "general review"}
 ${learningStyleContext}
+${syllabusTopics}
 
-Generate exactly 5 multiple-choice questions that:
-1. Target the specific weak areas mentioned
-2. Help reinforce understanding of difficult concepts
-3. Include clear explanations for each answer
-4. Progress from easier to slightly harder questions
+QUESTION QUALITY RULES — MANDATORY:
+- 80% of questions (4 out of 5) MUST be application/problem-solving questions
+- Maximum 1 out of 5 may be conceptual (and even then, test understanding, not recall)
+- NEVER generate basic definition questions like "What is X?" or "Define Y"
+- Every question must require the student to: compute, solve, apply a formula, analyze a scenario, debug code, or work through steps
 
-Each question must have exactly 4 options with one correct answer.`;
+SUBJECT-AWARE FORMATTING:
+- Math: Include actual equations, expressions, derivatives, integrals, word problems
+- CS: Include code snippets, algorithm tracing, debugging scenarios, output prediction
+- Chemistry: Include reactions, formula balancing, stoichiometry calculations
+- Physics: Include formulas with values, unit conversions, applied force/energy problems
+- General: Scenario-based questions requiring analysis and reasoning
+
+EXAMPLE TRANSFORMATIONS:
+❌ "What is a derivative?" → ✅ "Find the derivative of f(x) = 3x² + 2x − 5"
+❌ "What is a scalar?" → ✅ "A force of 10N is applied at 30°. Find the horizontal component."
+❌ "Define polymorphism" → ✅ "Given class Animal with method speak(), what output does this code produce: ..."
+
+Generate exactly 5 multiple-choice questions with 4 options each and clear explanations.`;
 
       toolConfig = {
         tools: [
