@@ -307,7 +307,7 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
             {isAnswered && (
               <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
                 <p className="text-sm text-foreground">
-                  <strong>Explanation:</strong> {currentQuestion?.explanation}
+                  <strong>Explanation:</strong> <MathText text={currentQuestion?.explanation || ""} />
                 </p>
               </div>
             )}
