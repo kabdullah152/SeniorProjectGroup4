@@ -269,7 +269,8 @@ SUBJECT-AWARE FORMATTING:
 - Physics: Provide scenarios with given values requiring formula application and numerical solutions
 
 Generate exactly 5 practice problems with varying difficulty (easy, medium, hard).
-Each must include a helpful hint and a detailed step-by-step solution.`;
+Each must include a helpful hint and a detailed step-by-step solution.
+IMPORTANT: Use LaTeX math notation with dollar sign delimiters for ALL mathematical expressions (e.g. $f(x) = 3x^2$, $\\theta = 30^\\circ$). This applies to problems, hints, AND solutions.`;
 
       toolConfig = {
         tools: [
