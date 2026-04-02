@@ -259,7 +259,7 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
             </div>
 
             <div className="p-4 rounded-lg bg-muted/50 border border-border">
-              <p className="font-medium text-foreground">{currentQuestion?.question}</p>
+              <p className="font-medium text-foreground"><MathText text={currentQuestion?.question || ""} /></p>
             </div>
 
             <RadioGroup
