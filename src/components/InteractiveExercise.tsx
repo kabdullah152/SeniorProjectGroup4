@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { MathText } from "@/components/MathText";
 import {
   Dialog,
   DialogContent,
