@@ -337,7 +337,8 @@ Structure in 2 sections:
 Requirements for EACH question:
 - Exactly 4 distinct options
 - Include a brief explanation showing solution steps
-- Cover different subtopics`;
+- Cover different subtopics
+- IMPORTANT: Use LaTeX math notation with dollar sign delimiters for ALL mathematical expressions. For example: $f(x) = 3x^2 + 2x - 5$, $\\mathbf{p} = [x, y]^T$, $\\theta = 90^\\circ$. This applies to questions, options, AND explanations.`;
     } else if (requestType === "resource-content") {
       // Generate detailed content for a study resource
       const resourceTypeGuide = {
