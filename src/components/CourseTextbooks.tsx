@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +36,17 @@ export const CourseTextbooks = ({ className }: CourseTextbooksProps) => {
 
   useEffect(() => {
     loadTextbooks();
+  }, [className]);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.className === className) {
+        loadTextbooks();
+      }
+    };
+    window.addEventListener("syllabus-reparsed", handler);
+    return () => window.removeEventListener("syllabus-reparsed", handler);
   }, [className]);
 
   const loadTextbooks = async () => {
