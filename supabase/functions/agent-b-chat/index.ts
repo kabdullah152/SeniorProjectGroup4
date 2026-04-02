@@ -249,19 +249,26 @@ Generate exactly 5 multiple-choice questions with 4 options each and clear expla
       // Generate practice exercises with hints and solutions
       useToolCalling = true;
       const focusAreas = requestWeakAreas || [];
-      systemPrompt = `You are AgentB creating interactive practice exercises for a student.
+      systemPrompt = `You are AgentB creating interactive practice exercises requiring APPLIED problem solving.
 
 Class: ${className || "the course"}
 Focus Areas: ${focusAreas.join(", ") || "general practice"}
 ${learningStyleContext}
+${syllabusTopics}
 
-Generate exactly 5 practice problems that:
-1. Target the specific weak areas mentioned
-2. Include varying difficulty levels (easy, medium, hard)
-3. Provide helpful hints that guide without giving away the answer
-4. Include detailed step-by-step solutions
+EXERCISE QUALITY RULES — MANDATORY:
+- ALL exercises must require computation, multi-step reasoning, or hands-on problem solving
+- NEVER create exercises that only ask to define, list, or recall terms
+- Every problem must require the student to work through steps to arrive at an answer
 
-Create problems that require working through steps, not just multiple choice.`;
+SUBJECT-AWARE FORMATTING:
+- Math: Provide equations to solve, proofs to complete, expressions to simplify, word problems with numerical answers
+- CS: Provide code to debug, functions to implement, algorithm outputs to trace, complexity to analyze
+- Chemistry: Provide reactions to balance, concentrations to calculate, molecular structures to analyze
+- Physics: Provide scenarios with given values requiring formula application and numerical solutions
+
+Generate exactly 5 practice problems with varying difficulty (easy, medium, hard).
+Each must include a helpful hint and a detailed step-by-step solution.`;
 
       toolConfig = {
         tools: [
