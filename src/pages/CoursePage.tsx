@@ -525,6 +525,9 @@ const CoursePage = () => {
           )}
         </Card>
 
+        {/* Bloom's Taxonomy Analysis */}
+        <BloomTaxonomy className={decodedClassName} />
+
         {/* Chapter Breakdowns - Real data from syllabus */}
         <ChapterBreakdowns className={decodedClassName} />
 
