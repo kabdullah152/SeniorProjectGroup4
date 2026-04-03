@@ -441,7 +441,7 @@ Be specific and actionable. These objectives will be used to generate personaliz
     } else if (requestType === "parse-syllabus") {
       // AI-driven Outline Builder: extract key components from a syllabus
       useToolCalling = true;
-      systemPrompt = `You are AgentB analyzing a course syllabus to extract its key structural components.
+      systemPrompt = `You are AgentB analyzing a course syllabus to extract its key structural components and classify learning goals using Revised Bloom's Taxonomy (RBT).
 
 Class: ${className || "the course"}
 ${learningStyleContext}
@@ -452,8 +452,16 @@ Carefully read the syllabus content and extract:
 3. **Weekly Schedule**: Week-by-week breakdown of topics (if available)
 4. **Grading Policy**: How grades are determined (exams, homework, participation percentages)
 5. **Required Materials**: Textbooks, software, or other required items
+6. **Bloom's Taxonomy Classification**: For EACH learning objective, classify it into the appropriate RBT cognitive level:
+   - **Remember**: Recall facts, terms, basic concepts (verbs: define, list, identify, name)
+   - **Understand**: Explain ideas, interpret meaning (verbs: describe, explain, summarize, classify)
+   - **Apply**: Use information in new situations (verbs: apply, solve, demonstrate, use)
+   - **Analyze**: Break information into parts, find patterns (verbs: analyze, compare, contrast, examine)
+   - **Evaluate**: Justify decisions, make judgments (verbs: evaluate, justify, critique, assess)
+   - **Create**: Produce new or original work (verbs: design, develop, create, construct)
 
-Be thorough and precise. Extract exactly what the syllabus states — do not invent information not present in the document.`;
+Be thorough and precise. Extract exactly what the syllabus states — do not invent information not present in the document.
+For Bloom classification, analyze the ACTION VERB in each objective to determine the correct level.`;
 
       toolConfig = {
         tools: [
