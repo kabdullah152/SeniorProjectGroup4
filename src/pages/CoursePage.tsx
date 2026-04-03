@@ -529,6 +529,9 @@ const CoursePage = () => {
         {/* Bloom's Taxonomy Analysis */}
         <BloomTaxonomy className={decodedClassName} />
 
+        {/* Interactive Course Draft */}
+        <GeneratedCourse className={decodedClassName} />
+
         {/* Chapter Breakdowns - Real data from syllabus */}
         <ChapterBreakdowns className={decodedClassName} />
 
