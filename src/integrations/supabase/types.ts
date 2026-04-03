@@ -66,6 +66,39 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       calendar_events: {
         Row: {
           created_at: string | null
@@ -101,6 +134,39 @@ export type Database = {
           start_time?: string | null
           title?: string
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      consent_records: {
+        Row: {
+          consent_type: string
+          consent_version: string
+          granted: boolean
+          granted_at: string
+          id: string
+          metadata: Json | null
+          revoked_at: string | null
+          user_id: string
+        }
+        Insert: {
+          consent_type: string
+          consent_version?: string
+          granted?: boolean
+          granted_at?: string
+          id?: string
+          metadata?: Json | null
+          revoked_at?: string | null
+          user_id: string
+        }
+        Update: {
+          consent_type?: string
+          consent_version?: string
+          granted?: boolean
+          granted_at?: string
+          id?: string
+          metadata?: Json | null
+          revoked_at?: string | null
           user_id?: string
         }
         Relationships: []
