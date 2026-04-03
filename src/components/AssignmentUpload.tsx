@@ -138,14 +138,8 @@ export const AssignmentUpload = ({ learningStyles, courseName, onAssignmentParse
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
-      const filePath = `${session.user.id}/${Date.now()}_${selectedFile.name}`;
-      
-      // Upload file to storage
-      const { error: uploadError } = await supabase.storage
-        .from('assignments')
-        .upload(filePath, selectedFile);
-
-      if (uploadError) throw uploadError;
+      // Upload with retry & collision-safe path
+      const { filePath } = await uploadFile("assignments", session.user.id, selectedFile);
 
       // Create assignment record
       const { data: assignment, error: dbError } = await supabase
