@@ -64,6 +64,12 @@ export const SyllabusUpload = ({ onUploadComplete }: SyllabusUploadProps) => {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const result = validateFile(file, SYLLABUS_VALIDATION);
+      if (!result.valid) {
+        toast({ title: "Invalid file", description: result.error, variant: "destructive" });
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
       setSelectedFile(file);
     }
   };
