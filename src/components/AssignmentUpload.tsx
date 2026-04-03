@@ -637,3 +637,17 @@ export const AssignmentUpload = ({ learningStyles, courseName, onAssignmentParse
     </Card>
   );
 };
+
+function DifficultyBadge({ level }: { level: string }) {
+  const styles: Record<string, string> = {
+    novice: "bg-green-500/10 text-green-600 border-green-500/30",
+    intermediate: "bg-yellow-500/10 text-yellow-600 border-yellow-500/30",
+    advanced: "bg-orange-500/10 text-orange-600 border-orange-500/30",
+    expert: "bg-red-500/10 text-red-600 border-red-500/30",
+  };
+  return (
+    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${styles[level] || styles.intermediate}`}>
+      {level.charAt(0).toUpperCase() + level.slice(1)}
+    </span>
+  );
+}
