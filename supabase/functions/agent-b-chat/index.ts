@@ -636,7 +636,20 @@ When explaining concepts, always offer to provide additional examples or practic
 When the user asks about their uploaded classes/syllabi, provide targeted help for those specific courses.`;
     }
 
+    // Append bias guardrails to all system prompts
+    systemPrompt += "\n" + biasGuardrails;
+
     console.log(`AgentB request - Type: ${requestType || "chat"}, User: ${userId || "anonymous"}, Class: ${className || "none"}`);
+
+    // Log AI parsing/generation events to audit trail
+    if (requestType && requestType !== "chat") {
+      logAuditEvent(
+        requestType.startsWith("parse") ? "ai_parse" : "ai_quiz_generate",
+        requestType,
+        className || undefined,
+        { requestType, className }
+      ).catch(() => {}); // fire-and-forget
+    }
 
     // For tool calling requests (quizzes, study plans)
     if (useToolCalling) {
