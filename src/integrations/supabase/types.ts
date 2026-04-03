@@ -171,6 +171,54 @@ export type Database = {
         }
         Relationships: []
       }
+      course_content: {
+        Row: {
+          bloom_level: string | null
+          class_name: string
+          created_at: string
+          exercises: Json | null
+          generation_status: string
+          id: string
+          lesson_content: string | null
+          quiz_questions: Json | null
+          study_resources: Json | null
+          topic: string
+          topic_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bloom_level?: string | null
+          class_name: string
+          created_at?: string
+          exercises?: Json | null
+          generation_status?: string
+          id?: string
+          lesson_content?: string | null
+          quiz_questions?: Json | null
+          study_resources?: Json | null
+          topic: string
+          topic_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bloom_level?: string | null
+          class_name?: string
+          created_at?: string
+          exercises?: Json | null
+          generation_status?: string
+          id?: string
+          lesson_content?: string | null
+          quiz_questions?: Json | null
+          study_resources?: Json | null
+          topic?: string
+          topic_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       course_textbooks: {
         Row: {
           author: string | null
