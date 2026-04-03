@@ -34,6 +34,7 @@ export const GeneratedCourse = ({ className }: GeneratedCourseProps) => {
   const [chapters, setChapters] = useState<CourseChapter[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState<Set<string>>(new Set());
+  const [refining, setRefining] = useState<Set<string>>(new Set());
   const [generatingAll, setGeneratingAll] = useState(false);
   const { toast } = useToast();
 
