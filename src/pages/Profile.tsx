@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useProfile } from "@/hooks/useProfile";
 import { ArrowLeft, Plus, FileText, Lightbulb, Image as ImageIcon, ClipboardCheck, Upload, Trash2 } from "lucide-react";
+import { PrivacySettings } from "@/components/PrivacySettings";
 
 interface UserClass {
   id: string;
@@ -514,6 +515,9 @@ export default function Profile() {
             </div>
           )}
         </Card>
+
+        {/* Privacy & Compliance Settings */}
+        <PrivacySettings />
 
         {/* Available Learning Resources */}
         <Card className="p-6 shadow-[var(--shadow-medium)]">
