@@ -27,6 +27,7 @@ import { AssignmentUpload } from "@/components/AssignmentUpload";
 import { ChapterBreakdowns } from "@/components/ChapterBreakdowns";
 import { CourseTextbooks } from "@/components/CourseTextbooks";
 import { BloomTaxonomy } from "@/components/BloomTaxonomy";
+import { GeneratedCourse } from "@/components/GeneratedCourse";
 import { format, differenceInDays, isPast, isToday } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -527,6 +528,9 @@ const CoursePage = () => {
 
         {/* Bloom's Taxonomy Analysis */}
         <BloomTaxonomy className={decodedClassName} />
+
+        {/* Interactive Course Draft */}
+        <GeneratedCourse className={decodedClassName} />
 
         {/* Chapter Breakdowns - Real data from syllabus */}
         <ChapterBreakdowns className={decodedClassName} />
