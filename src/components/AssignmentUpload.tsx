@@ -263,12 +263,15 @@ export const AssignmentUpload = ({ learningStyles, courseName, onAssignmentParse
         
         toast({
           title: "Assignment analyzed",
-          description: `Extracted ${data.learningObjectives.length} learning objectives.`,
+          description: `Extracted ${data.learningObjectives.length} learning objectives. Analyzing difficulty...`,
         });
 
         if (onAssignmentParsed) {
           onAssignmentParsed({ ...assignment, learning_objectives: data.learningObjectives });
         }
+
+        // Auto-trigger difficulty analysis
+        analyzeDifficulty(assignment.id);
       }
     } catch (error) {
       console.error("Parse error:", error);
