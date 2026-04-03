@@ -38,6 +38,10 @@ interface Assignment {
   uploaded_at: string;
   assessment_type: string | null;
   assessment_metadata: unknown;
+  difficulty_level: string | null;
+  irt_parameters: Record<string, unknown> | null;
+  knowledge_dependencies: string[] | null;
+  difficulty_analyzed_at: string | null;
 }
 
 interface Syllabus {
