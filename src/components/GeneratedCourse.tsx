@@ -437,10 +437,35 @@ function ChapterContent({
             return <p key={i} className="text-sm text-muted-foreground mb-2"><MathText text={line} /></p>;
           })}
         </div>
-        <Button variant="ghost" size="sm" className="mt-3 gap-1.5 text-xs" onClick={onRegenerate} disabled={isRegenerating}>
-          {isRegenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-          Regenerate
-        </Button>
+        <div className="flex items-center gap-2 mt-3 flex-wrap">
+          <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={onRegenerate} disabled={isRegenerating || isRefining}>
+            {isRegenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+            Regenerate
+          </Button>
+          <div className="flex items-center gap-1.5">
+            <Select value={refineMode} onValueChange={setRefineMode}>
+              <SelectTrigger className="h-7 w-[120px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="full">Full Polish</SelectItem>
+                <SelectItem value="clarity">Clarity</SelectItem>
+                <SelectItem value="concise">Concise</SelectItem>
+                <SelectItem value="engaging">Engaging</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs border-primary/30 text-primary hover:bg-primary/10"
+              onClick={() => onRefine(refineMode)}
+              disabled={isRefining || isRegenerating}
+            >
+              {isRefining ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+              Refine
+            </Button>
+          </div>
+        </div>
       </TabsContent>
 
       {/* Quiz */}
