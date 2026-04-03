@@ -537,6 +537,88 @@ export const AssignmentUpload = ({ learningStyles, courseName, onAssignmentParse
                         <Sparkles className="w-3 h-3 text-primary" />
                       </div>
                     )}
+                    {/* Difficulty Analysis Section */}
+                    {isAnalyzing.has(assignment.id) && (
+                      <div className="mt-2 flex items-center gap-1.5">
+                        <Loader2 className="w-3 h-3 animate-spin text-primary" />
+                        <span className="text-xs text-primary">Analyzing difficulty...</span>
+                      </div>
+                    )}
+                    {assignment.difficulty_level && assignment.irt_parameters && (
+                      <div className="mt-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setExpandedDifficulty((prev) => {
+                              const next = new Set(prev);
+                              next.has(assignment.id) ? next.delete(assignment.id) : next.add(assignment.id);
+                              return next;
+                            });
+                          }}
+                          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <Brain className="w-3 h-3" />
+                          <DifficultyBadge level={assignment.difficulty_level} />
+                          <span>IRT b={Number(assignment.irt_parameters.difficulty ?? 0).toFixed(1)}</span>
+                          <span>·</span>
+                          <span>{assignment.irt_parameters.bloomLevel}</span>
+                          {expandedDifficulty.has(assignment.id) ? (
+                            <ChevronUp className="w-3 h-3" />
+                          ) : (
+                            <ChevronDown className="w-3 h-3" />
+                          )}
+                        </button>
+                        {expandedDifficulty.has(assignment.id) && (
+                          <div className="mt-2 p-3 rounded-lg bg-muted/30 border border-border text-xs space-y-2">
+                            <div className="grid grid-cols-3 gap-2">
+                              <div>
+                                <span className="text-muted-foreground block">Discrimination (a)</span>
+                                <span className="font-medium text-foreground">{Number(assignment.irt_parameters.discrimination ?? 0).toFixed(2)}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground block">Difficulty (b)</span>
+                                <span className="font-medium text-foreground">{Number(assignment.irt_parameters.difficulty ?? 0).toFixed(2)}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground block">Guessing (c)</span>
+                                <span className="font-medium text-foreground">{Number(assignment.irt_parameters.guessing ?? 0).toFixed(2)}</span>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <span className="text-muted-foreground block">Cognitive Load</span>
+                                <span className="font-medium text-foreground">{assignment.irt_parameters.cognitiveLoad}/10</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground block">Est. Time</span>
+                                <span className="font-medium text-foreground">{assignment.irt_parameters.estimatedMinutes} min</span>
+                              </div>
+                            </div>
+                            {assignment.knowledge_dependencies && assignment.knowledge_dependencies.length > 0 && (
+                              <div>
+                                <span className="text-muted-foreground block mb-1">Prerequisites (KST)</span>
+                                <div className="flex flex-wrap gap-1">
+                                  {assignment.knowledge_dependencies.map((dep, i) => (
+                                    <Badge key={i} variant="outline" className="text-[10px] py-0">{dep}</Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {!assignment.difficulty_level && !isAnalyzing.has(assignment.id) && assignment.learning_objectives && assignment.learning_objectives.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-1 h-6 text-xs gap-1 text-muted-foreground hover:text-primary"
+                        onClick={(e) => { e.stopPropagation(); analyzeDifficulty(assignment.id); }}
+                      >
+                        <BarChart3 className="w-3 h-3" />
+                        Analyze Difficulty
+                      </Button>
+                    )}
                   </div>
                   <Button
                     variant="ghost"
