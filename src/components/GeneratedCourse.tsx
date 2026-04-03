@@ -5,9 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   BookOpen, FileQuestion, Zap, Link2, Loader2, Sparkles, RefreshCw,
-  CheckCircle2, Clock, Brain
+  CheckCircle2, Clock, Brain, Wand2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -33,6 +34,7 @@ export const GeneratedCourse = ({ className }: GeneratedCourseProps) => {
   const [chapters, setChapters] = useState<CourseChapter[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState<Set<string>>(new Set());
+  const [refining, setRefining] = useState<Set<string>>(new Set());
   const [generatingAll, setGeneratingAll] = useState(false);
   const { toast } = useToast();
 
@@ -193,7 +195,43 @@ export const GeneratedCourse = ({ className }: GeneratedCourseProps) => {
     }
   };
 
-  const generateAllPending = async () => {
+  const refineChapter = async (chapter: CourseChapter, mode: string) => {
+    setRefining((prev) => new Set(prev).add(chapter.id));
+    try {
+      const { data, error } = await supabase.functions.invoke("refine-content", {
+        body: {
+          contentId: chapter.id,
+          lessonContent: chapter.lesson_content,
+          quizQuestions: chapter.quiz_questions,
+          exercises: chapter.exercises,
+          refinementMode: mode,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      await loadChapters();
+      toast({
+        title: "Content refined",
+        description: data?.changesSummary || `"${chapter.topic}" has been polished`,
+      });
+    } catch (error) {
+      console.error("Refinement error:", error);
+      toast({
+        title: "Refinement failed",
+        description: error instanceof Error ? error.message : "Please try again",
+        variant: "destructive",
+      });
+      await supabase.from("course_content").update({ generation_status: "complete" }).eq("id", chapter.id);
+    } finally {
+      setRefining((prev) => {
+        const next = new Set(prev);
+        next.delete(chapter.id);
+        return next;
+      });
+    }
+  };
+
+
     setGeneratingAll(true);
     const pending = chapters.filter((c) => c.generation_status === "pending");
 
@@ -307,7 +345,7 @@ export const GeneratedCourse = ({ className }: GeneratedCourseProps) => {
                 </AccordionTrigger>
                 <AccordionContent className="pb-4">
                   {chapter.generation_status === "complete" ? (
-                    <ChapterContent chapter={chapter} onRegenerate={() => generateChapter(chapter)} isRegenerating={generating.has(chapter.id)} />
+                    <ChapterContent chapter={chapter} onRegenerate={() => generateChapter(chapter)} isRegenerating={generating.has(chapter.id)} onRefine={(mode) => refineChapter(chapter, mode)} isRefining={refining.has(chapter.id)} />
                   ) : (
                     <div className="text-center py-6">
                       <Brain className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
@@ -355,15 +393,20 @@ function ChapterContent({
   chapter,
   onRegenerate,
   isRegenerating,
+  onRefine,
+  isRefining,
 }: {
   chapter: CourseChapter;
   onRegenerate: () => void;
   isRegenerating: boolean;
+  onRefine: (mode: string) => void;
+  isRefining: boolean;
 }) {
   const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
   const [showExplanations, setShowExplanations] = useState<Set<number>>(new Set());
   const [showHints, setShowHints] = useState<Set<number>>(new Set());
   const [showSolutions, setShowSolutions] = useState<Set<number>>(new Set());
+  const [refineMode, setRefineMode] = useState("full");
 
   return (
     <Tabs defaultValue="lesson" className="w-full">
@@ -394,10 +437,35 @@ function ChapterContent({
             return <p key={i} className="text-sm text-muted-foreground mb-2"><MathText text={line} /></p>;
           })}
         </div>
-        <Button variant="ghost" size="sm" className="mt-3 gap-1.5 text-xs" onClick={onRegenerate} disabled={isRegenerating}>
-          {isRegenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-          Regenerate
-        </Button>
+        <div className="flex items-center gap-2 mt-3 flex-wrap">
+          <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={onRegenerate} disabled={isRegenerating || isRefining}>
+            {isRegenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+            Regenerate
+          </Button>
+          <div className="flex items-center gap-1.5">
+            <Select value={refineMode} onValueChange={setRefineMode}>
+              <SelectTrigger className="h-7 w-[120px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="full">Full Polish</SelectItem>
+                <SelectItem value="clarity">Clarity</SelectItem>
+                <SelectItem value="concise">Concise</SelectItem>
+                <SelectItem value="engaging">Engaging</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs border-primary/30 text-primary hover:bg-primary/10"
+              onClick={() => onRefine(refineMode)}
+              disabled={isRefining || isRegenerating}
+            >
+              {isRefining ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+              Refine
+            </Button>
+          </div>
+        </div>
       </TabsContent>
 
       {/* Quiz */}
