@@ -381,6 +381,16 @@ SUBJECT-AWARE QUESTION FORMATTING (detect subject from course name/syllabus):
 - Physics: formulas with given values, unit-based problems, applied force/energy/motion scenarios
 - General: scenario-based analysis requiring reasoning and application
 
+VISUAL QUESTION GENERATION — IMPORTANT:
+- For 30-50% of questions (3-5 out of 10), include a visual component when the subject supports it
+- Set visual_required=true and provide visual_type + visual_data for rendering
+- Supported visual_type values: "graph", "free_body_diagram", "molecule", "velocity_time_graph", "position_time_graph", "none"
+- For graph visuals: provide { "function": "y = x^2 - 4x + 3", "range": [-2, 6] }
+- For physics graphs: provide { "dataPoints": [{"x":0,"y":0},{"x":1,"y":5},...], "xLabel": "Time (s)", "yLabel": "Velocity (m/s)" }
+- For free body diagrams: provide { "forces": [{ "label": "Gravity", "direction": "down" }, { "label": "Normal", "direction": "up" }] }
+- For molecule: provide { "formula": "H2O" }
+- Only use visual types that match the subject matter
+
 SYLLABUS ALIGNMENT:
 - If syllabus topics are provided above, derive ALL questions from those specific topics
 - Do NOT invent topics outside the syllabus
