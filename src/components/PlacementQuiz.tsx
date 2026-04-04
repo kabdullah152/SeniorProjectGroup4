@@ -124,7 +124,7 @@ export const PlacementQuiz = ({ learningStyles, onQuizComplete, refreshTrigger, 
         setQuestions(data.questions);
         toast({
           title: "Quiz Generated",
-          description: `${data.questions.length} questions ready for ${selectedClass}!`,
+          description: `${data.questions.length} questions ready for ${quizClass}!`,
         });
       } else {
         throw new Error("Invalid quiz format received");
