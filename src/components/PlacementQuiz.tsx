@@ -249,15 +249,18 @@ export const PlacementQuiz = ({ learningStyles, onQuizComplete, refreshTrigger, 
         </div>
       ) : questions.length === 0 && isCourseScoped ? (
         <div className="space-y-4">
-          {completedClasses.includes(className!) ? (
-            <div className="text-center py-4">
-              <CheckCircle2 className="w-10 h-10 mx-auto mb-2 text-green-500" />
-              <p className="text-foreground font-medium">Placement quiz completed for {className}!</p>
-              <Button variant="outline" className="mt-3" onClick={() => { setAutoGenTriggered(false); generateQuiz(className!); }}>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Retake Quiz
-              </Button>
-            </div>
+           {completedClasses.includes(className!) ? (
+             <div className="text-center py-6 space-y-3">
+               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/10">
+                 <CheckCircle2 className="w-8 h-8 text-green-500" />
+               </div>
+               <p className="text-lg font-semibold text-foreground">Placement Quiz Completed</p>
+               <p className="text-sm text-muted-foreground">Your study plan has been generated based on your results.</p>
+               <Button variant="outline" className="mt-2" onClick={() => setShowRegenerateConfirm(true)}>
+                 <RefreshCw className="w-4 h-4 mr-2" />
+                 Regenerate Placement Quiz
+               </Button>
+             </div>
           ) : isGenerating ? (
             <div className="text-center py-8">
               <Loader2 className="w-10 h-10 mx-auto mb-3 animate-spin text-primary" />
