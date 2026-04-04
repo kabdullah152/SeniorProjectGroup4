@@ -231,6 +231,16 @@ SUBJECT-AWARE FORMATTING:
 - Physics: Include formulas with values, unit conversions, applied force/energy problems
 - General: Scenario-based questions requiring analysis and reasoning
 
+VISUAL QUESTION GENERATION — IMPORTANT:
+- For 30-50% of questions, include a visual component when applicable
+- Set visual_required=true and provide visual_type + visual_data for rendering
+- Supported visual_type values: "graph", "free_body_diagram", "molecule", "velocity_time_graph", "position_time_graph", "none"
+- For graph visuals: provide { "function": "y = x^2 - 4x + 3", "range": [-2, 6] }
+- For physics graphs: provide { "dataPoints": [...], "xLabel": "Time (s)", "yLabel": "Velocity (m/s)" }
+- For free body diagrams: provide { "forces": [{ "label": "Gravity", "direction": "down" }, ...] }
+- For molecule: provide { "formula": "H2O" }
+- Only use visual types that match the subject matter
+
 EXAMPLE TRANSFORMATIONS:
 ❌ "What is a derivative?" → ✅ "Find the derivative of f(x) = 3x² + 2x − 5"
 ❌ "What is a scalar?" → ✅ "A force of 10N is applied at 30°. Find the horizontal component."
@@ -245,7 +255,7 @@ IMPORTANT: Use LaTeX math notation with dollar sign delimiters for ALL mathemati
             type: "function",
             function: {
               name: "generate_quiz",
-              description: "Generate a mini quiz with exactly 5 questions - no more, no less",
+              description: "Generate a mini quiz with exactly 5 questions - no more, no less. Include visual data when applicable.",
               parameters: {
                 type: "object",
                 properties: {
@@ -260,7 +270,23 @@ IMPORTANT: Use LaTeX math notation with dollar sign delimiters for ALL mathemati
                         question: { type: "string" },
                         options: { type: "array", items: { type: "string" }, minItems: 4, maxItems: 4 },
                         correctIndex: { type: "number", description: "Index of the correct option (0-3)" },
-                        explanation: { type: "string", description: "Brief explanation of why the answer is correct" }
+                        explanation: { type: "string", description: "Brief explanation of why the answer is correct" },
+                        visual_required: { type: "boolean", description: "Whether this question benefits from a visual representation" },
+                        visual_type: { type: "string", enum: ["graph", "free_body_diagram", "molecule", "velocity_time_graph", "position_time_graph", "none"], description: "Type of visual to render" },
+                        visual_data: {
+                          type: "object",
+                          description: "Structured data for rendering the visual. For graphs: { function, range }. For physics: { dataPoints, xLabel, yLabel }. For forces: { forces: [{ label, direction }] }. For molecules: { formula }.",
+                          properties: {
+                            function: { type: "string" },
+                            range: { type: "array", items: { type: "number" } },
+                            dataPoints: { type: "array", items: { type: "object", properties: { x: { type: "number" }, y: { type: "number" } } } },
+                            xLabel: { type: "string" },
+                            yLabel: { type: "string" },
+                            forces: { type: "array", items: { type: "object", properties: { label: { type: "string" }, direction: { type: "string" } } } },
+                            formula: { type: "string" },
+                            points: { type: "array", items: { type: "object", properties: { x: { type: "number" }, y: { type: "number" }, label: { type: "string" } } } }
+                          }
+                        }
                       },
                       required: ["id", "question", "options", "correctIndex", "explanation"]
                     }
