@@ -63,7 +63,19 @@ export const PlacementQuiz = ({ learningStyles, onQuizComplete, refreshTrigger, 
     }
   };
 
-  const generateQuiz = async () => {
+  // Auto-generate quiz when on a course-scoped page and syllabus exists
+  useEffect(() => {
+    if (isCourseScoped && !autoGenTriggered && syllabi.length > 0 && !completedClasses.includes(className!)) {
+      const hasSyllabus = syllabi.some(s => s.class_name === className);
+      if (hasSyllabus && questions.length === 0 && !isGenerating) {
+        setAutoGenTriggered(true);
+        setSelectedClass(className!);
+        generateQuiz(className!);
+      }
+    }
+  }, [isCourseScoped, syllabi, autoGenTriggered, className, completedClasses]);
+
+
     if (!selectedClass) {
       toast({
         title: "Select a class",
