@@ -8,7 +8,17 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { FileQuestion, Loader2, BookOpen, RefreshCw, CheckCircle2, XCircle, ArrowRight, Trophy } from "lucide-react";
+import { FileQuestion, Loader2, BookOpen, RefreshCw, CheckCircle2, XCircle, ArrowRight, Trophy, AlertTriangle } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { QuizResult } from "@/hooks/useStudyPlan";
