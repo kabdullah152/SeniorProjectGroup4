@@ -31,6 +31,7 @@ interface PlacementQuizProps {
   onQuizComplete: (result: QuizResult) => void;
   refreshTrigger?: number;
   completedClasses?: string[];
+  className?: string;
 }
 
 export const PlacementQuiz = ({ learningStyles, onQuizComplete, refreshTrigger, completedClasses = [] }: PlacementQuizProps) => {
