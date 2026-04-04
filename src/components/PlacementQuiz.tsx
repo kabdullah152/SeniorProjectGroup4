@@ -533,6 +533,32 @@ export const PlacementQuiz = ({ learningStyles, onQuizComplete, refreshTrigger, 
           </div>
         </div>
       )}
+
+      <AlertDialog open={showRegenerateConfirm} onOpenChange={setShowRegenerateConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              Regenerate Placement Quiz?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will create a new placement quiz for <span className="font-medium text-foreground">{className}</span> and regenerate your study plan based on the new results. Your previous quiz results will be replaced.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setAutoGenTriggered(false);
+                generateQuiz(className!);
+              }}
+              className="bg-[image:var(--gradient-primary)] hover:opacity-90"
+            >
+              Regenerate Quiz
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };
