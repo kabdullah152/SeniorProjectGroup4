@@ -8,11 +8,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   BookOpen, FileQuestion, Zap, Link2, Loader2, Sparkles, RefreshCw,
-  CheckCircle2, Clock, Brain, Wand2
+  CheckCircle2, Clock, Brain, Wand2, ClipboardCheck
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { MathText } from "@/components/MathText";
+import { ContentReview } from "@/components/ContentReview";
 
 interface CourseChapter {
   id: string;
@@ -345,7 +346,7 @@ export const GeneratedCourse = ({ className }: GeneratedCourseProps) => {
                 </AccordionTrigger>
                 <AccordionContent className="pb-4">
                   {chapter.generation_status === "complete" ? (
-                    <ChapterContent chapter={chapter} onRegenerate={() => generateChapter(chapter)} isRegenerating={generating.has(chapter.id)} onRefine={(mode) => refineChapter(chapter, mode)} isRefining={refining.has(chapter.id)} />
+                    <ChapterContent chapter={chapter} courseName={className} onRegenerate={() => generateChapter(chapter)} isRegenerating={generating.has(chapter.id)} onRefine={(mode) => refineChapter(chapter, mode)} isRefining={refining.has(chapter.id)} />
                   ) : (
                     <div className="text-center py-6">
                       <Brain className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
@@ -391,12 +392,14 @@ export const GeneratedCourse = ({ className }: GeneratedCourseProps) => {
 // Sub-component for displaying generated chapter content
 function ChapterContent({
   chapter,
+  courseName,
   onRegenerate,
   isRegenerating,
   onRefine,
   isRefining,
 }: {
   chapter: CourseChapter;
+  courseName: string;
   onRegenerate: () => void;
   isRegenerating: boolean;
   onRefine: (mode: string) => void;
@@ -410,7 +413,7 @@ function ChapterContent({
 
   return (
     <Tabs defaultValue="lesson" className="w-full">
-      <TabsList className="grid w-full grid-cols-4 mb-4">
+      <TabsList className="grid w-full grid-cols-5 mb-4">
         <TabsTrigger value="lesson" className="text-xs gap-1">
           <BookOpen className="w-3 h-3" /> Lesson
         </TabsTrigger>
@@ -422,6 +425,9 @@ function ChapterContent({
         </TabsTrigger>
         <TabsTrigger value="resources" className="text-xs gap-1">
           <Link2 className="w-3 h-3" /> Resources
+        </TabsTrigger>
+        <TabsTrigger value="review" className="text-xs gap-1">
+          <ClipboardCheck className="w-3 h-3" /> Review
         </TabsTrigger>
       </TabsList>
 
@@ -580,6 +586,17 @@ function ChapterContent({
             </div>
           </a>
         ))}
+      </TabsContent>
+
+      {/* SME Review */}
+      <TabsContent value="review" className="mt-0">
+        <ContentReview
+          contentId={chapter.id}
+          lessonContent={chapter.lesson_content}
+          topic={chapter.topic}
+          className={courseName}
+          bloomLevel={chapter.bloom_level}
+        />
       </TabsContent>
     </Tabs>
   );
