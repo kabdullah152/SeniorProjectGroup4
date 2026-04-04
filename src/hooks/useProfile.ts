@@ -29,8 +29,14 @@ export const useProfile = () => {
         .single();
 
       if (profileData && !error) {
-        setProfile(profileData);
-        setOriginalProfile(profileData);
+        const normalized = {
+          full_name: profileData.full_name ?? null,
+          email: profileData.email ?? null,
+          university_id: profileData.university_id ?? null,
+        };
+        setProfile(normalized);
+        setOriginalProfile(normalized);
+        setHasChanges(false);
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
