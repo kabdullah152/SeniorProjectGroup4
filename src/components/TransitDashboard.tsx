@@ -158,10 +158,11 @@ const SchedulePanel = ({
 
 export const TransitDashboard = () => {
   const navigate = useNavigate();
+  const { profile } = useProfile();
   const [activeTab, setActiveTab] = useState<"shuttle" | "metro">("shuttle");
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
 
-  const { data: routes = [], isLoading: routesLoading } = useTransitRoutes();
+  const { data: routes = [], isLoading: routesLoading } = useTransitRoutes(profile.university_id);
   const routeIds = useMemo(() => routes.map((r) => r.id), [routes]);
   const { data: allStops = [], isLoading: stopsLoading } = useAllTransitStops(routeIds);
 
