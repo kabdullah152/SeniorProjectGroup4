@@ -106,10 +106,10 @@ export const PlacementQuiz = ({ learningStyles, onQuizComplete, refreshTrigger, 
             Authorization: `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
           body: JSON.stringify({
-            messages: [{ role: "user", content: `Generate an interactive placement quiz for ${selectedClass}` }],
+            messages: [{ role: "user", content: `Generate an interactive placement quiz for ${quizClass}` }],
             learningStyles,
             requestType: "placement-quiz-interactive",
-            className: selectedClass,
+            className: quizClass,
           }),
         }
       );
