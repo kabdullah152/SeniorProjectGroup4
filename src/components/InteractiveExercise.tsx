@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { MathText } from "@/components/MathText";
+import { QuestionVisual } from "@/components/QuestionVisual";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +23,9 @@ interface Exercise {
   solution: string;
   topic: string;
   difficulty: "easy" | "medium" | "hard";
+  visual_required?: boolean;
+  visual_type?: string;
+  visual_data?: any;
 }
 
 interface InteractiveExerciseProps {
