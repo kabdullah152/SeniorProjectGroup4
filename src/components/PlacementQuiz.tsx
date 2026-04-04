@@ -272,7 +272,7 @@ export const PlacementQuiz = ({ learningStyles, onQuizComplete, refreshTrigger, 
                   </SelectContent>
                 </Select>
                 <Button
-                  onClick={generateQuiz}
+                  onClick={() => generateQuiz()}
                   disabled={isGenerating || !selectedClass}
                   className="bg-[image:var(--gradient-primary)] hover:opacity-90"
                 >
