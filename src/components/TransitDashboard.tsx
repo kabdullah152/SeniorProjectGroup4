@@ -233,6 +233,7 @@ export const TransitDashboard = () => {
   const { data: routes = [], isLoading: routesLoading } = useTransitRoutes(profile.university_id);
   const routeIds = useMemo(() => routes.map((r) => r.id), [routes]);
   const { data: allStops = [], isLoading: stopsLoading } = useAllTransitStops(routeIds);
+  const { data: arrivals = [] } = useTransitArrivals(selectedRouteId);
 
   const filteredRoutes = routes.filter((r) => r.route_type === activeTab);
   const selectedRoute = routes.find((r) => r.id === selectedRouteId);
