@@ -25,7 +25,6 @@ import { cn } from "@/lib/utils";
 interface StructuredStudyPlanProps {
   className: string;
   learningStyles: string[];
-  hasPlacementQuiz: boolean;
 }
 
 const moduleTypeConfig: Record<string, { icon: typeof BookOpen; label: string; color: string }> = {
