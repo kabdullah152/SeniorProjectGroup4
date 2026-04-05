@@ -132,6 +132,7 @@ ALGORITHMIC FAIRNESS DIRECTIVES (MANDATORY):
       systemPrompt = `You are AgentB creating a STRUCTURED STUDY PLAN for "${className || "the course"}".
 ${learningStyleContext}
 ${syllabusTopics}
+${textbookContext}
 
 INSTRUCTIONS:
 - Create focus areas from the ACTUAL SYLLABUS TOPICS listed above (or infer logical topics if not available)
@@ -143,8 +144,8 @@ INSTRUCTIONS:
 - Each focus area must have EXACTLY 3 modules in this order:
 
 MODULE TYPES (use exactly these values in this exact order):
-1. "lesson" — Concept explanation adapted to learning style (visual → diagrams; practical → worked examples; conceptual → reasoning)
-2. "practice" — Guided application questions with progressive difficulty
+1. "lesson" — Concept explanation adapted to learning style (visual → diagrams; practical → worked examples; conceptual → reasoning). Reference assigned textbook chapters and terminology where applicable.
+2. "practice" — Guided application questions with progressive difficulty. Frame problems using textbook notation and terminology.
 3. "quiz" — Benchmark quiz (assessment for mastery)
 
 Each module title should be specific and descriptive.
