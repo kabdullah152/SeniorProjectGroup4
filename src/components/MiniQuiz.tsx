@@ -324,10 +324,22 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
             </RadioGroup>
 
             {isAnswered && (
-              <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+              <div className={cn(
+                "p-4 rounded-lg border",
+                selectedAnswer === currentQuestion?.correctIndex
+                  ? "bg-green-500/5 border-green-500/20"
+                  : "bg-destructive/5 border-destructive/20"
+              )}>
                 <p className="text-sm text-foreground">
                   <strong>Explanation:</strong> <MathText text={currentQuestion?.explanation || ""} />
                 </p>
+                {selectedAnswer !== currentQuestion?.correctIndex && currentQuestion?.trap_explanation && (
+                  <div className="mt-2 pt-2 border-t border-border">
+                    <p className="text-sm text-destructive">
+                      <strong>Why your answer was wrong:</strong> <MathText text={currentQuestion.trap_explanation} />
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
