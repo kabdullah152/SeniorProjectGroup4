@@ -122,7 +122,7 @@ export const CourseHub = ({ refreshTrigger = 0 }: CourseHubProps) => {
     fetchClasses();
   };
 
-
+  if (loading) {
     return (
       <Card className="p-6 shadow-[var(--shadow-soft)] border-border">
         <div className="flex items-center justify-center py-12">
