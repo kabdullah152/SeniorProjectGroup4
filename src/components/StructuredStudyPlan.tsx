@@ -494,10 +494,9 @@ export const StructuredStudyPlan = ({ className, learningStyles }: StructuredStu
         return (
           <MiniQuiz
             isOpen={quizGateOpen}
-            onClose={(score?: number, total?: number) => {
+            onClose={(score?: number, total?: number, missed?: string[]) => {
               if (score !== undefined && total !== undefined) {
-                // Collect missed concepts from the quiz
-                handleQuizComplete(quizGateAreaId, score, total, [gateArea.topic]);
+                handleQuizComplete(quizGateAreaId, score, total, missed && missed.length > 0 ? missed : [gateArea.topic]);
               } else {
                 setQuizGateOpen(false);
                 setQuizGateAreaId(null);
@@ -506,8 +505,8 @@ export const StructuredStudyPlan = ({ className, learningStyles }: StructuredStu
             className={className}
             weakAreas={[gateArea.topic]}
             learningStyles={learningStyles}
-            onQuizComplete={(score, total) => {
-              handleQuizComplete(quizGateAreaId, score, total, [gateArea.topic]);
+            onQuizComplete={(score, total, missed) => {
+              handleQuizComplete(quizGateAreaId, score, total, missed && missed.length > 0 ? missed : [gateArea.topic]);
             }}
           />
         );
