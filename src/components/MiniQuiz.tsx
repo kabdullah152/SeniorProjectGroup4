@@ -178,6 +178,7 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
     } else {
       setIsComplete(true);
       await saveScore();
+      onQuizComplete?.(score + (selectedAnswer === questions[currentIndex].correctIndex ? 1 : 0), questions.length);
     }
   };
 
