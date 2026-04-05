@@ -556,6 +556,80 @@ IMPORTANT: Use LaTeX math notation with dollar sign delimiters for ALL mathemati
         ],
         tool_choice: { type: "function", function: { name: "generate_exercises" } }
       };
+    } else if (requestType === "topic-placement-quiz") {
+      // Generate a quick 5-question placement quiz for a specific topic to assess initial mastery
+      useToolCalling = true;
+      const focusTopic = topic || "general";
+      systemPrompt = `You are AgentB creating a TOPIC PLACEMENT QUIZ to assess a student's EXISTING knowledge of "${focusTopic}" in "${className || "the course"}".
+
+${learningStyleContext}
+${syllabusTopics}
+${textbookContext}
+
+PURPOSE: This is a DIAGNOSTIC quiz to determine if the student already knows this topic well enough to skip it.
+Unlike benchmark quizzes (which test after learning), this tests PRIOR knowledge.
+
+CRITICAL RULES:
+- Generate exactly 5 multiple-choice questions about "${focusTopic}"
+- Questions should use the TERMINOLOGY and NOTATION from the assigned textbook (if listed above)
+- 80% application-based, max 20% conceptual
+- Progressive difficulty: Q1-2 foundational, Q3-4 intermediate, Q5 advanced
+- Each question must have 4 options with one correct answer
+- Include an explanation for each correct answer
+- Include misconception tracking for wrong answers
+- Use LaTeX for math with $ delimiters
+- Frame questions around the specific topic, not general course content
+
+${biasGuardrails}`;
+
+      toolConfig = {
+        tools: [{
+          type: "function",
+          function: {
+            name: "generate_quiz",
+            description: "Generate a 5-question topic placement quiz with misconception tracking",
+            parameters: {
+              type: "object",
+              properties: {
+                questions: {
+                  type: "array",
+                  minItems: 5,
+                  maxItems: 5,
+                  items: {
+                    type: "object",
+                    properties: {
+                      id: { type: "number" },
+                      question: { type: "string" },
+                      options: { type: "array", items: { type: "string" }, minItems: 4, maxItems: 4 },
+                      correctIndex: { type: "number" },
+                      explanation: { type: "string" },
+                      misconception: { type: "string" },
+                      trap_explanation: { type: "string" },
+                      visual_required: { type: "boolean" },
+                      visual_type: { type: "string", enum: ["graph", "free_body_diagram", "molecule", "velocity_time_graph", "position_time_graph", "none"] },
+                      visual_data: {
+                        type: "object",
+                        properties: {
+                          function: { type: "string" },
+                          range: { type: "array", items: { type: "number" } },
+                          dataPoints: { type: "array", items: { type: "object", properties: { x: { type: "number" }, y: { type: "number" } } } },
+                          xLabel: { type: "string" },
+                          yLabel: { type: "string" },
+                          forces: { type: "array", items: { type: "object", properties: { label: { type: "string" }, direction: { type: "string" } } } },
+                          formula: { type: "string" }
+                        }
+                      }
+                    },
+                    required: ["id", "question", "options", "correctIndex", "explanation", "misconception", "trap_explanation"]
+                  }
+                }
+              },
+              required: ["questions"]
+            }
+          }
+        }],
+        tool_choice: { type: "function", function: { name: "generate_quiz" } }
+      };
     } else if (requestType === "placement-quiz-interactive") {
       // Return structured JSON for interactive quiz
       useToolCalling = true;
