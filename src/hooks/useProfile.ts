@@ -23,7 +23,7 @@ export const useProfile = () => {
       }
 
       const { data: profileData, error } = await supabase
-        .from("profiles")
+        .from("profiles_safe" as any)
         .select("full_name, email, university_id")
         .eq("id", session.user.id)
         .single();

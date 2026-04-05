@@ -93,7 +93,7 @@ const CoursePage = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { navigate("/auth"); return; }
       const { data } = await supabase
-        .from("profiles")
+        .from("profiles_safe" as any)
         .select("learning_styles")
         .eq("id", session.user.id)
         .single();

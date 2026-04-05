@@ -36,7 +36,7 @@ const Index = () => {
     if (session) {
       // Check if user has completed learning style quiz
       const { data: profile } = await supabase
-        .from('profiles')
+        .from('profiles_safe' as any)
         .select('learning_styles')
         .eq('id', session.user.id)
         .single();
