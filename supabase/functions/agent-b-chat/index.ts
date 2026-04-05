@@ -110,7 +110,7 @@ ALGORITHMIC FAIRNESS DIRECTIVES (MANDATORY):
     };
 
     if (requestType === "structured-study-plan") {
-      // Generate structured focus areas with modules from syllabus
+      // Generate structured focus areas with 3-step modules from syllabus
       useToolCalling = true;
       systemPrompt = `You are AgentB creating a STRUCTURED STUDY PLAN for "${className || "the course"}".
 ${learningStyleContext}
@@ -119,18 +119,18 @@ ${syllabusTopics}
 INSTRUCTIONS:
 - Create focus areas from the ACTUAL SYLLABUS TOPICS listed above (or infer logical topics if not available)
 - Order focus areas by prerequisite logic or syllabus timeline
-- Each focus area must have 3-5 learning modules
-- Adapt module content to student's learning styles: ${learningStyles?.join(", ") || "visual, reading"}
+- Convert each topic into a SHORT, CLEAN chapter name (2-5 words). Examples:
+  "Identify the major energy systems used during exercise" → "Energy Systems"
+  "Understanding chemical bonding and molecular structure" → "Chemical Bonding"
+  "Introduction to data structures and algorithms" → "Data Structures"
+- Each focus area must have EXACTLY 3 modules in this order:
 
-MODULE TYPES (use exactly these values):
-- "concept" — Concept explanation (theory, definitions, why it matters)
-- "worked-example" — Step-by-step worked example
-- "guided-practice" — Guided practice with hints
-- "exercise" — Interactive exercise (apply knowledge)
+MODULE TYPES (use exactly these values in this exact order):
+1. "lesson" — Concept explanation adapted to learning style (visual → diagrams; practical → worked examples; conceptual → reasoning)
+2. "practice" — Guided application questions with progressive difficulty
+3. "quiz" — Benchmark quiz (assessment for mastery)
 
-Each focus area should progress: concept → worked-example → guided-practice → exercise
-
-Give each module a clear, specific title and brief description. Estimate time in minutes.
+Each module title should be specific and descriptive.
 Generate 4-8 focus areas depending on the course scope.`;
 
       toolConfig = {
@@ -138,7 +138,7 @@ Generate 4-8 focus areas depending on the course scope.`;
           type: "function",
           function: {
             name: "generate_structured_plan",
-            description: "Generate structured focus areas with learning modules",
+            description: "Generate structured focus areas with 3-step learning modules (Lesson → Practice → Quiz)",
             parameters: {
               type: "object",
               properties: {
@@ -147,14 +147,16 @@ Generate 4-8 focus areas depending on the course scope.`;
                   items: {
                     type: "object",
                     properties: {
-                      topic: { type: "string" },
+                      topic: { type: "string", description: "Short 2-5 word chapter name" },
                       estimated_time_minutes: { type: "number" },
                       modules: {
                         type: "array",
+                        minItems: 3,
+                        maxItems: 3,
                         items: {
                           type: "object",
                           properties: {
-                            module_type: { type: "string", enum: ["concept", "worked-example", "guided-practice", "exercise"] },
+                            module_type: { type: "string", enum: ["lesson", "practice", "quiz"] },
                             title: { type: "string" },
                             description: { type: "string" },
                             estimated_time_minutes: { type: "number" },
@@ -173,6 +175,34 @@ Generate 4-8 focus areas depending on the course scope.`;
         }],
         tool_choice: { type: "function", function: { name: "generate_structured_plan" } }
       };
+    } else if (requestType === "targeted-review") {
+      // Generate targeted review lesson for missed concepts
+      const weakTopics = requestWeakAreas || [];
+      systemPrompt = `You are AgentB generating a TARGETED REVIEW LESSON.
+
+Class: ${className || "the course"}
+Topic: ${topic || "general"}
+Missed Concepts: ${weakTopics.join(", ")}
+${learningStyleContext}
+${syllabusTopics}
+
+${biasGuardrails}
+
+CRITICAL RULES:
+- This review is for a student who FAILED the benchmark quiz (<70%)
+- Focus ONLY on the specific missed concepts listed above
+- Adapt the teaching approach to the student's learning style:
+  Visual → diagrams, step-by-step visuals, flowcharts
+  Conceptual → clear explanations, reasoning chains, comparisons
+  Practical → worked examples, real-world applications, walkthroughs
+- For each missed concept:
+  1. Re-explain the core idea clearly
+  2. Show WHY common mistakes happen (trap answer analysis)
+  3. Provide a corrected worked example
+  4. Give a "try this" practice problem with solution
+- Use LaTeX for math with $ delimiters
+- Keep content focused and actionable — this is remediation, not a full lesson`;
+
     } else if (requestType === "module-content") {
       // Generate content for a specific learning module
       systemPrompt = `You are AgentB generating learning content for a specific module.
