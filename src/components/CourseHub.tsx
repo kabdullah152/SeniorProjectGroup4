@@ -271,6 +271,15 @@ export const CourseHub = ({ refreshTrigger = 0 }: CourseHubProps) => {
                     <ArchiveRestore className="w-3 h-3 mr-1" />
                     Restore
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDeleteTarget(course)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="w-3 h-3 mr-1" />
+                    Delete
+                  </Button>
                 </div>
               </div>
             ))}
