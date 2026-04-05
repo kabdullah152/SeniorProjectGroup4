@@ -110,7 +110,7 @@ ALGORITHMIC FAIRNESS DIRECTIVES (MANDATORY):
     };
 
     if (requestType === "structured-study-plan") {
-      // Generate structured focus areas with modules from syllabus
+      // Generate structured focus areas with 3-step modules from syllabus
       useToolCalling = true;
       systemPrompt = `You are AgentB creating a STRUCTURED STUDY PLAN for "${className || "the course"}".
 ${learningStyleContext}
@@ -119,18 +119,18 @@ ${syllabusTopics}
 INSTRUCTIONS:
 - Create focus areas from the ACTUAL SYLLABUS TOPICS listed above (or infer logical topics if not available)
 - Order focus areas by prerequisite logic or syllabus timeline
-- Each focus area must have 3-5 learning modules
-- Adapt module content to student's learning styles: ${learningStyles?.join(", ") || "visual, reading"}
+- Convert each topic into a SHORT, CLEAN chapter name (2-5 words). Examples:
+  "Identify the major energy systems used during exercise" → "Energy Systems"
+  "Understanding chemical bonding and molecular structure" → "Chemical Bonding"
+  "Introduction to data structures and algorithms" → "Data Structures"
+- Each focus area must have EXACTLY 3 modules in this order:
 
-MODULE TYPES (use exactly these values):
-- "concept" — Concept explanation (theory, definitions, why it matters)
-- "worked-example" — Step-by-step worked example
-- "guided-practice" — Guided practice with hints
-- "exercise" — Interactive exercise (apply knowledge)
+MODULE TYPES (use exactly these values in this exact order):
+1. "lesson" — Concept explanation adapted to learning style (visual → diagrams; practical → worked examples; conceptual → reasoning)
+2. "practice" — Guided application questions with progressive difficulty
+3. "quiz" — Benchmark quiz (assessment for mastery)
 
-Each focus area should progress: concept → worked-example → guided-practice → exercise
-
-Give each module a clear, specific title and brief description. Estimate time in minutes.
+Each module title should be specific and descriptive.
 Generate 4-8 focus areas depending on the course scope.`;
 
       toolConfig = {
@@ -138,7 +138,7 @@ Generate 4-8 focus areas depending on the course scope.`;
           type: "function",
           function: {
             name: "generate_structured_plan",
-            description: "Generate structured focus areas with learning modules",
+            description: "Generate structured focus areas with 3-step learning modules (Lesson → Practice → Quiz)",
             parameters: {
               type: "object",
               properties: {
@@ -147,14 +147,16 @@ Generate 4-8 focus areas depending on the course scope.`;
                   items: {
                     type: "object",
                     properties: {
-                      topic: { type: "string" },
+                      topic: { type: "string", description: "Short 2-5 word chapter name" },
                       estimated_time_minutes: { type: "number" },
                       modules: {
                         type: "array",
+                        minItems: 3,
+                        maxItems: 3,
                         items: {
                           type: "object",
                           properties: {
-                            module_type: { type: "string", enum: ["concept", "worked-example", "guided-practice", "exercise"] },
+                            module_type: { type: "string", enum: ["lesson", "practice", "quiz"] },
                             title: { type: "string" },
                             description: { type: "string" },
                             estimated_time_minutes: { type: "number" },
@@ -173,6 +175,34 @@ Generate 4-8 focus areas depending on the course scope.`;
         }],
         tool_choice: { type: "function", function: { name: "generate_structured_plan" } }
       };
+    } else if (requestType === "targeted-review") {
+      // Generate targeted review lesson for missed concepts
+      const weakTopics = requestWeakAreas || [];
+      systemPrompt = `You are AgentB generating a TARGETED REVIEW LESSON.
+
+Class: ${className || "the course"}
+Topic: ${topic || "general"}
+Missed Concepts: ${weakTopics.join(", ")}
+${learningStyleContext}
+${syllabusTopics}
+
+${biasGuardrails}
+
+CRITICAL RULES:
+- This review is for a student who FAILED the benchmark quiz (<70%)
+- Focus ONLY on the specific missed concepts listed above
+- Adapt the teaching approach to the student's learning style:
+  Visual → diagrams, step-by-step visuals, flowcharts
+  Conceptual → clear explanations, reasoning chains, comparisons
+  Practical → worked examples, real-world applications, walkthroughs
+- For each missed concept:
+  1. Re-explain the core idea clearly
+  2. Show WHY common mistakes happen (trap answer analysis)
+  3. Provide a corrected worked example
+  4. Give a "try this" practice problem with solution
+- Use LaTeX for math with $ delimiters
+- Keep content focused and actionable — this is remediation, not a full lesson`;
+
     } else if (requestType === "module-content") {
       // Generate content for a specific learning module
       systemPrompt = `You are AgentB generating learning content for a specific module.
@@ -188,31 +218,31 @@ ${biasGuardrails}
 
 CONTENT GENERATION RULES based on module type:
 
-If "concept":
+If "lesson":
 - Provide a clear, thorough explanation of the concept
 - Use analogies and real-world connections
 - Include key definitions and formulas (use LaTeX with $ delimiters)
-- Adapt to learning style (visual → use descriptions of diagrams; practical → real examples)
+- Adapt to learning style:
+  Visual → describe diagrams, include step-by-step visuals, flowcharts
+  Practical → worked examples with real-world context
+  Conceptual → deep explanations, reasoning chains, compare/contrast
+- Structure: Introduction → Core Concepts → Key Formulas → Examples → Summary
 
-If "worked-example":
-- Show a complete worked example step by step
-- Number each step clearly
-- Explain WHY each step is taken
-- Use LaTeX for math: $f(x) = x^2$
+If "practice":
+- Present 3-5 guided practice problems with progressive difficulty
+- Start with basic application, progress to multi-step problems
+- For each problem:
+  1. Problem statement
+  2. Hint (without giving away answer)
+  3. Step-by-step solution
+- 80% must be application/problem-solving, max 20% conceptual
+- Use subject-aware formatting (math equations, code snippets, reactions, etc.)
 
-If "guided-practice":
-- Present a problem for the student to work through
-- Provide hints at each step
-- Include the solution at the end
-- Make it progressively challenging
+If "quiz":
+- This should NOT generate content — the quiz is handled separately
+- Return a brief message: "This module contains the benchmark quiz."
 
-If "exercise":
-- Present 2-3 practice problems
-- Include varying difficulty
-- Provide solutions with explanations
-- Focus on application, not memorization
-
-Keep content engaging and focused. Use markdown formatting.`;
+Keep content engaging and focused. Use markdown formatting.
 
     } else if (requestType === "study-plan") {
       // Generate personalized study plan based on quiz results
@@ -352,6 +382,18 @@ EXAMPLE TRANSFORMATIONS:
 ❌ "Define polymorphism" → ✅ "Given class Animal with method speak(), what output does this code produce: ..."
 
 Generate exactly 5 multiple-choice questions with 4 options each and clear explanations.
+
+TRAP ANSWER FEEDBACK (CRITICAL):
+- Each WRONG answer option must map to a specific misconception
+- For each question, include a "misconception" field describing what concept the student is weak on if they get it wrong
+- Include a "trap_explanation" field that explains: why common wrong answers are wrong, what thinking led to them, and how to rethink the problem
+- Example: If the trap answer uses the wrong formula, explain which formula should be used and why
+
+DIFFICULTY PROGRESSION within the quiz:
+- Questions 1-2: Basic application
+- Questions 3-4: Multi-step problems
+- Question 5: Analysis / real-world scenario
+
 IMPORTANT: Use LaTeX math notation with dollar sign delimiters for ALL mathematical expressions (e.g. $f(x) = 3x^2$, $\\theta = 30^\\circ$). This applies to questions, options, AND explanations.`;
 
       toolConfig = {
@@ -360,7 +402,7 @@ IMPORTANT: Use LaTeX math notation with dollar sign delimiters for ALL mathemati
             type: "function",
             function: {
               name: "generate_quiz",
-              description: "Generate a mini quiz with exactly 5 questions - no more, no less. Include visual data when applicable.",
+              description: "Generate a mini quiz with exactly 5 questions including misconception tracking and trap answer feedback.",
               parameters: {
                 type: "object",
                 properties: {
@@ -376,11 +418,13 @@ IMPORTANT: Use LaTeX math notation with dollar sign delimiters for ALL mathemati
                         options: { type: "array", items: { type: "string" }, minItems: 4, maxItems: 4 },
                         correctIndex: { type: "number", description: "Index of the correct option (0-3)" },
                         explanation: { type: "string", description: "Brief explanation of why the answer is correct" },
+                        misconception: { type: "string", description: "The specific concept the student is weak on if they get this wrong" },
+                        trap_explanation: { type: "string", description: "Why common wrong answers are wrong, what thinking led to them, and how to rethink" },
                         visual_required: { type: "boolean", description: "Whether this question benefits from a visual representation" },
                         visual_type: { type: "string", enum: ["graph", "free_body_diagram", "molecule", "velocity_time_graph", "position_time_graph", "none"], description: "Type of visual to render" },
                         visual_data: {
                           type: "object",
-                          description: "Structured data for rendering the visual. For graphs: { function, range }. For physics: { dataPoints, xLabel, yLabel }. For forces: { forces: [{ label, direction }] }. For molecules: { formula }.",
+                          description: "Structured data for rendering the visual.",
                           properties: {
                             function: { type: "string" },
                             range: { type: "array", items: { type: "number" } },
@@ -393,7 +437,7 @@ IMPORTANT: Use LaTeX math notation with dollar sign delimiters for ALL mathemati
                           }
                         }
                       },
-                      required: ["id", "question", "options", "correctIndex", "explanation"]
+                      required: ["id", "question", "options", "correctIndex", "explanation", "misconception", "trap_explanation"]
                     }
                   }
                 },
@@ -969,6 +1013,37 @@ When the user asks about their uploaded classes/syllabi, provide targeted help f
 
       return new Response(JSON.stringify({ error: "No quiz data returned" }), {
         status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Non-streaming response for targeted review
+    if (requestType === "targeted-review") {
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...messages,
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        return new Response(JSON.stringify({ error: "Failed to generate review content" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content || "Review generation failed.";
+      return new Response(JSON.stringify({ content }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

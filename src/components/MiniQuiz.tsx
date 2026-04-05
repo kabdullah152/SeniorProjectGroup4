@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, CheckCircle2, XCircle, FileQuestion, ArrowRight, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface Question {
   id: number;
@@ -23,6 +24,8 @@ interface Question {
   options: string[];
   correctIndex: number;
   explanation: string;
+  misconception?: string;
+  trap_explanation?: string;
   visual_required?: boolean;
   visual_type?: string;
   visual_data?: any;
@@ -142,12 +145,19 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
     setQuestions(set.questions);
   };
 
+  const [missedConcepts, setMissedConcepts] = useState<string[]>([]);
+
   const handleAnswer = () => {
     if (selectedAnswer === null) return;
     
     setIsAnswered(true);
     if (selectedAnswer === questions[currentIndex].correctIndex) {
       setScore(prev => prev + 1);
+    } else {
+      // Track missed concept for review system
+      const q = questions[currentIndex];
+      const concept = q.misconception || q.question.slice(0, 60);
+      setMissedConcepts(prev => [...prev, concept]);
     }
   };
 
@@ -315,10 +325,22 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
             </RadioGroup>
 
             {isAnswered && (
-              <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+              <div className={cn(
+                "p-4 rounded-lg border",
+                selectedAnswer === currentQuestion?.correctIndex
+                  ? "bg-green-500/5 border-green-500/20"
+                  : "bg-destructive/5 border-destructive/20"
+              )}>
                 <p className="text-sm text-foreground">
                   <strong>Explanation:</strong> <MathText text={currentQuestion?.explanation || ""} />
                 </p>
+                {selectedAnswer !== currentQuestion?.correctIndex && currentQuestion?.trap_explanation && (
+                  <div className="mt-2 pt-2 border-t border-border">
+                    <p className="text-sm text-destructive">
+                      <strong>Why your answer was wrong:</strong> <MathText text={currentQuestion.trap_explanation} />
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
