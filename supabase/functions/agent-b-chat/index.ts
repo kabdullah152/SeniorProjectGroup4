@@ -1000,29 +1000,40 @@ Be specific and actionable. These objectives will be used to generate personaliz
         tool_choice: { type: "function", function: { name: "extract_assignment_objectives" } }
       };
     } else if (requestType === "parse-syllabus") {
-      // AI-driven Outline Builder: extract key components from a syllabus
+      // AI-driven Outline Builder: extract key components from a syllabus + textbook
       useToolCalling = true;
       systemPrompt = `You are AgentB analyzing a course syllabus to extract its key structural components and classify learning goals using Revised Bloom's Taxonomy (RBT).
 
 Class: ${className || "the course"}
 ${learningStyleContext}
+${textbookContext}
 
-Carefully read the syllabus content and extract:
-1. **Course Description**: A concise summary of what the course covers
-2. **Learning Objectives**: Specific outcomes students should achieve
-3. **Weekly Schedule**: Week-by-week breakdown of topics (if available)
-4. **Grading Policy**: How grades are determined (exams, homework, participation percentages)
-5. **Required Materials**: Textbooks, software, or other required items
-6. **Bloom's Taxonomy Classification**: For EACH learning objective, classify it into the appropriate RBT cognitive level:
-   - **Remember**: Recall facts, terms, basic concepts (verbs: define, list, identify, name)
-   - **Understand**: Explain ideas, interpret meaning (verbs: describe, explain, summarize, classify)
-   - **Apply**: Use information in new situations (verbs: apply, solve, demonstrate, use)
-   - **Analyze**: Break information into parts, find patterns (verbs: analyze, compare, contrast, examine)
-   - **Evaluate**: Justify decisions, make judgments (verbs: evaluate, justify, critique, assess)
-   - **Create**: Produce new or original work (verbs: design, develop, create, construct)
+EXTRACTION RULES (CRITICAL — follow exactly):
 
-Be thorough and precise. Extract exactly what the syllabus states — do not invent information not present in the document.
-For Bloom classification, analyze the ACTION VERB in each objective to determine the correct level.`;
+1. **PRIORITIZE TEXTBOOK for chapter structure**: If textbook information is available above, use the textbook's table of contents as the primary source for chapter/topic names. Use the syllabus weekly schedule to determine WHICH of those chapters are actually covered.
+
+2. **SEPARATE chapters from objectives**:
+   - **Chapters/Topics** = short noun phrases, 2–6 words (e.g., "Linear Transformations", "Chemical Equilibrium", "Data Structures")
+   - **Learning Objectives** = full sentences starting with action verbs (e.g., "Apply matrix operations to solve systems of equations")
+
+3. **DO NOT convert topics into sentence-style objectives.** A chapter called "Energy Systems" stays as "Energy Systems", NOT "Understand energy systems used during exercise".
+
+4. **FILTER the chapter list**:
+   - Remove any item longer than 8 words
+   - Remove any item that starts with a verb (understand, apply, analyze, identify, etc.)
+   - Normalize to clean, short names (remove "Introduction to", "Chapter 3:", week numbers, etc.)
+
+5. **Topic-to-textbook mapping**: When textbook info is available, map each extracted chapter/topic to its corresponding textbook chapter number or section. If no textbook is available, leave the mapping empty.
+
+6. **Bloom's Taxonomy Classification**: For EACH learning objective (NOT chapters), classify using RBT:
+   - **Remember**: define, list, identify, name
+   - **Understand**: describe, explain, summarize, classify
+   - **Apply**: apply, solve, demonstrate, use
+   - **Analyze**: analyze, compare, contrast, examine
+   - **Evaluate**: evaluate, justify, critique, assess
+   - **Create**: design, develop, create, construct
+
+Be thorough and precise. Extract exactly what the syllabus states — do not invent information not present in the document.`;
 
       toolConfig = {
         tools: [
@@ -1030,7 +1041,7 @@ For Bloom classification, analyze the ACTION VERB in each objective to determine
             type: "function",
             function: {
               name: "extract_syllabus_outline",
-              description: "Extract structured outline from a course syllabus",
+              description: "Extract structured outline from a course syllabus with separate chapters and objectives",
               parameters: {
                 type: "object",
                 properties: {
@@ -1038,10 +1049,28 @@ For Bloom classification, analyze the ACTION VERB in each objective to determine
                     type: "string",
                     description: "Concise course description summarizing what the course covers"
                   },
+                  chapters: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "Clean, short chapter/topic names (2-6 words each, noun phrases only). NOT objectives."
+                  },
                   learningObjectives: {
                     type: "array",
                     items: { type: "string" },
-                    description: "List of specific learning objectives from the syllabus"
+                    description: "Full learning objective sentences starting with action verbs"
+                  },
+                  topicTextbookMapping: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        topic: { type: "string", description: "The chapter/topic name" },
+                        textbookChapter: { type: "string", description: "Corresponding textbook chapter/section (e.g. 'Ch. 3', 'Section 4.2')" },
+                        textbookTitle: { type: "string", description: "Title of the textbook this maps to" }
+                      },
+                      required: ["topic"]
+                    },
+                    description: "Mapping of topics to textbook chapters (empty array if no textbook)"
                   },
                   weeklySchedule: {
                     type: "array",
@@ -1066,7 +1095,7 @@ For Bloom classification, analyze the ACTION VERB in each objective to determine
                       },
                       required: ["component", "weight"]
                     },
-                    description: "Grading breakdown (e.g., Midterm 30%, Final 40%)"
+                    description: "Grading breakdown"
                   },
                   requiredMaterials: {
                     type: "array",
@@ -1096,7 +1125,7 @@ For Bloom classification, analyze the ACTION VERB in each objective to determine
                     description: "Bloom's Taxonomy classification for each learning objective"
                   }
                 },
-                required: ["courseDescription", "learningObjectives", "parsedSummary", "bloomClassifications"]
+                required: ["courseDescription", "chapters", "learningObjectives", "topicTextbookMapping", "parsedSummary", "bloomClassifications"]
               }
             }
           }

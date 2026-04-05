@@ -88,13 +88,21 @@ export const SyllabusOutline = ({
         description: `Extracted course outline for ${className}`,
       });
 
-      // Extract topics for chapter selection
-      const topics: string[] = [];
-      if (data.weeklySchedule) {
+      // Use the new "chapters" field (clean noun phrases) for chapter selection
+      // Fall back to weekly schedule topics, then objectives
+      let topics: string[] = [];
+      if (data.chapters && data.chapters.length > 0) {
+        topics = data.chapters;
+      } else if (data.weeklySchedule) {
         data.weeklySchedule.forEach((w: any) => { if (w.topic) topics.push(w.topic); });
       }
       if (topics.length === 0 && data.learningObjectives) {
         topics.push(...data.learningObjectives.slice(0, 15));
+      }
+
+      // Store topic-to-textbook mapping if available
+      if (data.topicTextbookMapping && data.topicTextbookMapping.length > 0) {
+        localStorage.setItem(`textbook-mapping-${className}`, JSON.stringify(data.topicTextbookMapping));
       }
 
       if (topics.length > 0) {
