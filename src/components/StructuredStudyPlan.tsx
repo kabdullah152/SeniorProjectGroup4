@@ -562,6 +562,33 @@ export const StructuredStudyPlan = ({ className, learningStyles }: StructuredStu
           />
         );
       })()}
+
+      {/* Topic Placement Quiz Modal */}
+      {topicPlacementAreaId && topicPlacementQuestions && (() => {
+        const placementArea = plan.focusAreas.find(a => a.id === topicPlacementAreaId);
+        if (!placementArea) return null;
+        return (
+          <MiniQuiz
+            isOpen={topicPlacementOpen}
+            onClose={(score?: number, total?: number) => {
+              if (score !== undefined && total !== undefined) {
+                handleTopicPlacementComplete(score, total);
+              } else {
+                setTopicPlacementOpen(false);
+                setTopicPlacementAreaId(null);
+                setTopicPlacementQuestions(null);
+              }
+            }}
+            className={className}
+            weakAreas={[placementArea.topic]}
+            learningStyles={learningStyles}
+            preloadedQuestions={topicPlacementQuestions.questions}
+            onQuizComplete={(score, total) => {
+              handleTopicPlacementComplete(score, total);
+            }}
+          />
+        );
+      })()}
     </>
   );
 };
