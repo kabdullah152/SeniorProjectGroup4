@@ -44,7 +44,7 @@ interface QuizSet {
   questions: Question[];
 }
 
-export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles }: MiniQuizProps) => {
+export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles, onQuizComplete }: MiniQuizProps) => {
   const [quizSets, setQuizSets] = useState<QuizSet[]>([]);
   const [selectedSet, setSelectedSet] = useState<QuizSet | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
