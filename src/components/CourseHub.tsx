@@ -286,6 +286,26 @@ export const CourseHub = ({ refreshTrigger = 0 }: CourseHubProps) => {
           </div>
         </div>
       )}
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {deleteTarget?.class_name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deleting this course will permanently remove all associated data including syllabi, lessons, quizzes, assignments, study plans, practice history, and performance reports. You will not be able to reference anything for this course in the future.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteCourse}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };
