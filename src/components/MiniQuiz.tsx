@@ -144,12 +144,19 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
     setQuestions(set.questions);
   };
 
+  const [missedConcepts, setMissedConcepts] = useState<string[]>([]);
+
   const handleAnswer = () => {
     if (selectedAnswer === null) return;
     
     setIsAnswered(true);
     if (selectedAnswer === questions[currentIndex].correctIndex) {
       setScore(prev => prev + 1);
+    } else {
+      // Track missed concept for review system
+      const q = questions[currentIndex];
+      const concept = q.misconception || q.question.slice(0, 60);
+      setMissedConcepts(prev => [...prev, concept]);
     }
   };
 
