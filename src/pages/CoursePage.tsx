@@ -453,7 +453,6 @@ const CoursePage = () => {
 
         {/* Interactive Chapter Breakdown */}
         <GeneratedCourse className={decodedClassName} />
-        </div>
 
         {/* Personalized Practice */}
         <PersonalizedPractice className={decodedClassName} learningStyles={learningStyles} />
