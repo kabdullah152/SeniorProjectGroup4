@@ -178,6 +178,14 @@ export const InteractiveExercise = ({ isOpen, onClose, className, weakAreas, lea
     } else {
       setIsComplete(true);
       await saveProgress();
+      track({
+        eventType: "exercise_completed",
+        className,
+        score: completed.size,
+        total: exercises.length,
+        outcome: "completed",
+      });
+      snapshotWeek(className);
     }
   };
 

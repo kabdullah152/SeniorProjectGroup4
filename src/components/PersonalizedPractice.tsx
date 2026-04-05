@@ -158,6 +158,16 @@ export const PersonalizedPractice = ({ className, learningStyles }: Personalized
         topics_practiced: problem ? [problem.topic] : weakAreas,
         metadata: { bloom_level: problem?.bloom_level, difficulty: problem?.difficulty },
       });
+      track({
+        eventType: "exercise_completed",
+        className,
+        topic: problem?.topic,
+        bloomLevel: problem?.bloom_level,
+        score: 1,
+        total: 1,
+        outcome: "completed",
+      });
+      snapshotWeek(className);
     }
 
     // Check if all complete
