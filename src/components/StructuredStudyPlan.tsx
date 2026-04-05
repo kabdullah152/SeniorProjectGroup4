@@ -97,7 +97,7 @@ export const StructuredStudyPlan = ({ className, learningStyles }: StructuredStu
     return false;
   };
 
-  if (!hasPlacementQuiz) return null;
+  // No gate — adaptive learning works from syllabus topics directly
 
   // Empty state
   if (!plan.isLoading && plan.focusAreas.length === 0) {
