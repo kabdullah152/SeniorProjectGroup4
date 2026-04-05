@@ -400,6 +400,109 @@ export const useStructuredStudyPlan = (className: string, learningStyles: string
     await loadFocusAreas();
   }, [focusAreas, loadFocusAreas]);
 
+  // Take a topic placement quiz to assess prior knowledge and potentially skip
+  const [topicPlacementLoading, setTopicPlacementLoading] = useState<string | null>(null);
+
+  const takeTopicPlacement = useCallback(async (focusAreaId: string): Promise<any> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+
+    const area = focusAreas.find(a => a.id === focusAreaId);
+    if (!area) return null;
+
+    setTopicPlacementLoading(focusAreaId);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-b-chat`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            messages: [{ role: "user", content: `Generate a topic placement quiz for "${area.topic}" in ${className}` }],
+            learningStyles,
+            requestType: "topic-placement-quiz",
+            className,
+            topic: area.topic,
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to generate topic placement quiz");
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Topic placement quiz error:", error);
+      toast({ title: "Error", description: "Failed to generate placement quiz", variant: "destructive" });
+      return null;
+    } finally {
+      setTopicPlacementLoading(null);
+    }
+  }, [className, learningStyles, focusAreas, toast]);
+
+  // Handle topic placement quiz result — if passed, mark area as mastered
+  const handleTopicPlacementResult = useCallback(async (
+    focusAreaId: string,
+    score: number,
+    total: number
+  ) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const percentage = Math.round((score / total) * 100);
+    const area = focusAreas.find(a => a.id === focusAreaId);
+    if (!area) return;
+
+    if (percentage >= 70) {
+      // Student already knows this topic — mark all modules complete and pass quiz gate
+      await supabase
+        .from("study_focus_areas")
+        .update({ quiz_score: percentage, quiz_passed: true })
+        .eq("id", focusAreaId)
+        .eq("user_id", session.user.id);
+
+      // Mark all modules as completed
+      for (const mod of area.modules) {
+        await supabase
+          .from("study_modules")
+          .update({ is_completed: true, completed_at: new Date().toISOString() })
+          .eq("id", mod.id)
+          .eq("user_id", session.user.id);
+      }
+
+      // Unlock next area
+      const nextArea = focusAreas.find(a => a.topic_order === area.topic_order + 1);
+      if (nextArea) {
+        await supabase
+          .from("study_focus_areas")
+          .update({ is_unlocked: true })
+          .eq("id", nextArea.id)
+          .eq("user_id", session.user.id);
+      }
+
+      await loadFocusAreas();
+      toast({
+        title: percentage === 100 ? "Perfect! Topic Mastered 🎉" : "Topic Mastered ✅",
+        description: `${percentage}% — You already know "${area.topic}". Skipping to next topic.`,
+      });
+    } else {
+      // Student doesn't know this yet — set initial score but don't pass
+      await supabase
+        .from("study_focus_areas")
+        .update({ quiz_score: percentage })
+        .eq("id", focusAreaId)
+        .eq("user_id", session.user.id);
+
+      await loadFocusAreas();
+      toast({
+        title: "Start Learning",
+        description: `${percentage}% — Begin with the lesson to build mastery in "${area.topic}".`,
+      });
+    }
+  }, [focusAreas, loadFocusAreas, toast]);
+
   // Computed values
   const totalModules = focusAreas.reduce((sum, a) => sum + a.modules.length, 0);
   const completedModules = focusAreas.reduce((sum, a) => sum + a.modules.filter(m => m.is_completed).length, 0);
