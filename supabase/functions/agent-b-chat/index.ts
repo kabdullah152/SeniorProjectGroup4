@@ -203,6 +203,7 @@ Topic: ${topic || "general"}
 Missed Concepts: ${weakTopics.join(", ")}
 ${learningStyleContext}
 ${syllabusTopics}
+${textbookContext}
 
 ${biasGuardrails}
 
