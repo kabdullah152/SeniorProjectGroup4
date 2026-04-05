@@ -38,6 +38,7 @@ interface MiniQuizProps {
   weakAreas: string[];
   learningStyles: string[];
   onQuizComplete?: (score: number, total: number, missedConcepts: string[]) => void;
+  preloadedQuestions?: Question[];
 }
 
 interface QuizSet {
@@ -47,7 +48,7 @@ interface QuizSet {
   questions: Question[];
 }
 
-export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles, onQuizComplete }: MiniQuizProps) => {
+export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles, onQuizComplete, preloadedQuestions }: MiniQuizProps) => {
   const [quizSets, setQuizSets] = useState<QuizSet[]>([]);
   const [selectedSet, setSelectedSet] = useState<QuizSet | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -111,6 +112,21 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
     setIsAnswered(false);
     setScore(0);
     setIsComplete(false);
+
+    // If preloaded questions are provided, use them directly
+    if (preloadedQuestions && preloadedQuestions.length > 0) {
+      const preloadedSet: QuizSet = {
+        id: 0,
+        title: weakAreas[0] || "Topic Placement",
+        description: "Assess your existing knowledge",
+        questions: preloadedQuestions,
+      };
+      setQuizSets([preloadedSet]);
+      setSelectedSet(preloadedSet);
+      setQuestions(preloadedQuestions);
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const { data: { session } } = await supabase.auth.getSession();

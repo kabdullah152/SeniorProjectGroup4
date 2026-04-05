@@ -27,6 +27,7 @@ serve(async (req) => {
     let userId = null;
 
     let syllabusTopics = "";
+    let textbookContext = "";
 
     if (authHeader && SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
       const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -69,6 +70,22 @@ serve(async (req) => {
                 }
               }
             }
+          }
+        }
+
+        // Fetch assigned textbooks for the class
+        if (className) {
+          const { data: textbooks } = await supabase
+            .from("course_textbooks")
+            .select("title, author, requirement_type")
+            .eq("user_id", user.id)
+            .eq("class_name", className);
+
+          if (textbooks && textbooks.length > 0) {
+            const tbList = textbooks.map(tb => 
+              `- "${tb.title}"${tb.author ? ` by ${tb.author}` : ""} (${tb.requirement_type})`
+            ).join("\n");
+            textbookContext = `\n\nASSIGNED TEXTBOOKS for "${className}":\n${tbList}\n\nIMPORTANT: When recommending study materials, ALIGN with these textbooks. Suggest supplementary resources that COMPLEMENT (not replace) the assigned textbook. Reference textbook chapters, terminology, and notation where possible.`;
           }
         }
       }
@@ -115,6 +132,7 @@ ALGORITHMIC FAIRNESS DIRECTIVES (MANDATORY):
       systemPrompt = `You are AgentB creating a STRUCTURED STUDY PLAN for "${className || "the course"}".
 ${learningStyleContext}
 ${syllabusTopics}
+${textbookContext}
 
 INSTRUCTIONS:
 - Create focus areas from the ACTUAL SYLLABUS TOPICS listed above (or infer logical topics if not available)
@@ -126,8 +144,8 @@ INSTRUCTIONS:
 - Each focus area must have EXACTLY 3 modules in this order:
 
 MODULE TYPES (use exactly these values in this exact order):
-1. "lesson" — Concept explanation adapted to learning style (visual → diagrams; practical → worked examples; conceptual → reasoning)
-2. "practice" — Guided application questions with progressive difficulty
+1. "lesson" — Concept explanation adapted to learning style (visual → diagrams; practical → worked examples; conceptual → reasoning). Reference assigned textbook chapters and terminology where applicable.
+2. "practice" — Guided application questions with progressive difficulty. Frame problems using textbook notation and terminology.
 3. "quiz" — Benchmark quiz (assessment for mastery)
 
 Each module title should be specific and descriptive.
@@ -185,6 +203,7 @@ Topic: ${topic || "general"}
 Missed Concepts: ${weakTopics.join(", ")}
 ${learningStyleContext}
 ${syllabusTopics}
+${textbookContext}
 
 ${biasGuardrails}
 
@@ -213,6 +232,7 @@ Module Type: ${moduleType || "concept"}
 Module Title: ${moduleTitle || "Module"}
 ${learningStyleContext}
 ${syllabusTopics}
+${textbookContext}
 
 ${biasGuardrails}
 
@@ -222,11 +242,13 @@ If "lesson":
 - Provide a clear, thorough explanation of the concept
 - Use analogies and real-world connections
 - Include key definitions and formulas (use LaTeX with $ delimiters)
+- If textbooks are listed above, reference relevant chapters, use the textbook's terminology and notation
+- Suggest specific textbook sections for deeper reading as supplementary references
 - Adapt to learning style:
   Visual → describe diagrams, include step-by-step visuals, flowcharts
   Practical → worked examples with real-world context
   Conceptual → deep explanations, reasoning chains, compare/contrast
-- Structure: Introduction → Core Concepts → Key Formulas → Examples → Summary
+- Structure: Introduction → Core Concepts → Key Formulas → Examples → Textbook References → Summary
 
 If "practice":
 - Present 3-5 guided practice problems with progressive difficulty
@@ -352,6 +374,7 @@ Class: ${className || "the course"}
 Focus Areas: ${focusAreas.join(", ") || "general review"}
 ${learningStyleContext}
 ${syllabusTopics}
+${textbookContext}
 
 QUESTION QUALITY RULES — MANDATORY:
 - 80% of questions (4 out of 5) MUST be application/problem-solving questions
@@ -533,6 +556,80 @@ IMPORTANT: Use LaTeX math notation with dollar sign delimiters for ALL mathemati
         ],
         tool_choice: { type: "function", function: { name: "generate_exercises" } }
       };
+    } else if (requestType === "topic-placement-quiz") {
+      // Generate a quick 5-question placement quiz for a specific topic to assess initial mastery
+      useToolCalling = true;
+      const focusTopic = topic || "general";
+      systemPrompt = `You are AgentB creating a TOPIC PLACEMENT QUIZ to assess a student's EXISTING knowledge of "${focusTopic}" in "${className || "the course"}".
+
+${learningStyleContext}
+${syllabusTopics}
+${textbookContext}
+
+PURPOSE: This is a DIAGNOSTIC quiz to determine if the student already knows this topic well enough to skip it.
+Unlike benchmark quizzes (which test after learning), this tests PRIOR knowledge.
+
+CRITICAL RULES:
+- Generate exactly 5 multiple-choice questions about "${focusTopic}"
+- Questions should use the TERMINOLOGY and NOTATION from the assigned textbook (if listed above)
+- 80% application-based, max 20% conceptual
+- Progressive difficulty: Q1-2 foundational, Q3-4 intermediate, Q5 advanced
+- Each question must have 4 options with one correct answer
+- Include an explanation for each correct answer
+- Include misconception tracking for wrong answers
+- Use LaTeX for math with $ delimiters
+- Frame questions around the specific topic, not general course content
+
+${biasGuardrails}`;
+
+      toolConfig = {
+        tools: [{
+          type: "function",
+          function: {
+            name: "generate_quiz",
+            description: "Generate a 5-question topic placement quiz with misconception tracking",
+            parameters: {
+              type: "object",
+              properties: {
+                questions: {
+                  type: "array",
+                  minItems: 5,
+                  maxItems: 5,
+                  items: {
+                    type: "object",
+                    properties: {
+                      id: { type: "number" },
+                      question: { type: "string" },
+                      options: { type: "array", items: { type: "string" }, minItems: 4, maxItems: 4 },
+                      correctIndex: { type: "number" },
+                      explanation: { type: "string" },
+                      misconception: { type: "string" },
+                      trap_explanation: { type: "string" },
+                      visual_required: { type: "boolean" },
+                      visual_type: { type: "string", enum: ["graph", "free_body_diagram", "molecule", "velocity_time_graph", "position_time_graph", "none"] },
+                      visual_data: {
+                        type: "object",
+                        properties: {
+                          function: { type: "string" },
+                          range: { type: "array", items: { type: "number" } },
+                          dataPoints: { type: "array", items: { type: "object", properties: { x: { type: "number" }, y: { type: "number" } } } },
+                          xLabel: { type: "string" },
+                          yLabel: { type: "string" },
+                          forces: { type: "array", items: { type: "object", properties: { label: { type: "string" }, direction: { type: "string" } } } },
+                          formula: { type: "string" }
+                        }
+                      }
+                    },
+                    required: ["id", "question", "options", "correctIndex", "explanation", "misconception", "trap_explanation"]
+                  }
+                }
+              },
+              required: ["questions"]
+            }
+          }
+        }],
+        tool_choice: { type: "function", function: { name: "generate_quiz" } }
+      };
     } else if (requestType === "placement-quiz-interactive") {
       // Return structured JSON for interactive quiz
       useToolCalling = true;
@@ -540,6 +637,7 @@ IMPORTANT: Use LaTeX math notation with dollar sign delimiters for ALL mathemati
 
 ${learningStyleContext}
 ${syllabusTopics}
+${textbookContext}
 
 CRITICAL — QUESTION QUALITY RULES:
 - 80% of questions (8 out of 10) MUST be application/problem-solving questions

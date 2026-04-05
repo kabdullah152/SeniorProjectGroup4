@@ -40,6 +40,9 @@ export const StructuredStudyPlan = ({ className, learningStyles }: StructuredStu
   const [quizGateAreaId, setQuizGateAreaId] = useState<string | null>(null);
   const [reviewContent, setReviewContent] = useState<string | null>(null);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
+  const [topicPlacementOpen, setTopicPlacementOpen] = useState(false);
+  const [topicPlacementAreaId, setTopicPlacementAreaId] = useState<string | null>(null);
+  const [topicPlacementQuestions, setTopicPlacementQuestions] = useState<any>(null);
 
   const activeArea = plan.focusAreas.find(a => a.id === plan.activeFocusAreaId);
   const openModule = activeArea?.modules.find(m => m.id === openModuleId) || null;
@@ -83,6 +86,24 @@ export const StructuredStudyPlan = ({ className, learningStyles }: StructuredStu
     // Re-open the quiz
     setQuizGateAreaId(areaId);
     setQuizGateOpen(true);
+  };
+
+  const handleStartTopicPlacement = async (areaId: string) => {
+    setTopicPlacementAreaId(areaId);
+    const data = await plan.takeTopicPlacement(areaId);
+    if (data?.questions) {
+      setTopicPlacementQuestions(data);
+      setTopicPlacementOpen(true);
+    }
+  };
+
+  const handleTopicPlacementComplete = async (score: number, total: number) => {
+    if (topicPlacementAreaId) {
+      setTopicPlacementOpen(false);
+      await plan.handleTopicPlacementResult(topicPlacementAreaId, score, total);
+      setTopicPlacementAreaId(null);
+      setTopicPlacementQuestions(null);
+    }
   };
 
   const isModuleUnlocked = (mod: StudyModule, area: FocusArea): boolean => {
@@ -263,6 +284,36 @@ export const StructuredStudyPlan = ({ className, learningStyles }: StructuredStu
                     </Badge>
                   )}
                 </div>
+
+                {/* Topic Placement Quiz — skip if already mastered */}
+                {!activeArea.quiz_passed && activeArea.quiz_score === null && (
+                  <div className="p-3 rounded-lg border border-dashed border-primary/30 bg-primary/5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileQuestion className="w-4 h-4 text-primary" />
+                        <div>
+                          <p className="text-xs font-medium text-foreground">Already know this topic?</p>
+                          <p className="text-xs text-muted-foreground">Take a quick placement quiz to skip ahead</p>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={plan.topicPlacementLoading === activeArea.id}
+                        onClick={() => handleStartTopicPlacement(activeArea.id)}
+                      >
+                        {plan.topicPlacementLoading === activeArea.id ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <>
+                            <Zap className="w-3 h-3 mr-1" />
+                            Test
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Module Steps: Lesson → Practice → Quiz */}
                 <ScrollArea className="h-[320px] pr-2">
@@ -507,6 +558,33 @@ export const StructuredStudyPlan = ({ className, learningStyles }: StructuredStu
             learningStyles={learningStyles}
             onQuizComplete={(score, total, missed) => {
               handleQuizComplete(quizGateAreaId, score, total, missed && missed.length > 0 ? missed : [gateArea.topic]);
+            }}
+          />
+        );
+      })()}
+
+      {/* Topic Placement Quiz Modal */}
+      {topicPlacementAreaId && topicPlacementQuestions && (() => {
+        const placementArea = plan.focusAreas.find(a => a.id === topicPlacementAreaId);
+        if (!placementArea) return null;
+        return (
+          <MiniQuiz
+            isOpen={topicPlacementOpen}
+            onClose={(score?: number, total?: number) => {
+              if (score !== undefined && total !== undefined) {
+                handleTopicPlacementComplete(score, total);
+              } else {
+                setTopicPlacementOpen(false);
+                setTopicPlacementAreaId(null);
+                setTopicPlacementQuestions(null);
+              }
+            }}
+            className={className}
+            weakAreas={[placementArea.topic]}
+            learningStyles={learningStyles}
+            preloadedQuestions={topicPlacementQuestions.questions}
+            onQuizComplete={(score, total) => {
+              handleTopicPlacementComplete(score, total);
             }}
           />
         );
