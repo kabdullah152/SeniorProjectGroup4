@@ -17,6 +17,7 @@ import { Loader2, CheckCircle2, XCircle, FileQuestion, ArrowRight, RotateCcw, Br
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useTrackEvent } from "@/hooks/useTrackEvent";
 
 interface Question {
   id: number;

@@ -22,6 +22,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { QuizResult } from "@/hooks/useStudyPlan";
+import { useTrackEvent } from "@/hooks/useTrackEvent";
 
 interface Syllabus {
   id: string;

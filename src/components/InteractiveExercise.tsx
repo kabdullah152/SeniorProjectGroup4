@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Zap, CheckCircle2, Lightbulb, ArrowRight, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useTrackEvent } from "@/hooks/useTrackEvent";
 import { useToast } from "@/hooks/use-toast";
 
 interface Exercise {

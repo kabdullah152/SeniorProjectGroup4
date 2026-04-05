@@ -12,6 +12,7 @@ import {
   EyeOff, BookOpen, ArrowRight, Target, Zap,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useTrackEvent } from "@/hooks/useTrackEvent";
 import { useToast } from "@/hooks/use-toast";
 import { MathText } from "@/components/MathText";
 import { QuestionVisual } from "@/components/QuestionVisual";
