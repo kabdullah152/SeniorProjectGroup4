@@ -118,6 +118,17 @@ export const SyllabusOutline = ({
     }
   };
 
+  const handleChapterConfirm = async (selectedTopics: string[]) => {
+    // Store the selected chapters in localStorage for use by study plan generation
+    localStorage.setItem(`chapters-${className}`, JSON.stringify(selectedTopics));
+    toast({
+      title: "Chapters confirmed",
+      description: `${selectedTopics.length} chapters selected for ${className}`,
+    });
+    // Dispatch event so adaptive learning picks up selected chapters
+    window.dispatchEvent(new CustomEvent("chapters-selected", { detail: { className, topics: selectedTopics } }));
+  };
+
   const hasParsedData = !!parsedAt;
 
   if (!hasParsedData) {
