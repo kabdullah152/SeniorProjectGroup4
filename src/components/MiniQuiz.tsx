@@ -113,6 +113,21 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
     setScore(0);
     setIsComplete(false);
 
+    // If preloaded questions are provided, use them directly
+    if (preloadedQuestions && preloadedQuestions.length > 0) {
+      const preloadedSet: QuizSet = {
+        id: 0,
+        title: weakAreas[0] || "Topic Placement",
+        description: "Assess your existing knowledge",
+        questions: preloadedQuestions,
+      };
+      setQuizSets([preloadedSet]);
+      setSelectedSet(preloadedSet);
+      setQuestions(preloadedQuestions);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
