@@ -109,7 +109,112 @@ ALGORITHMIC FAIRNESS DIRECTIVES (MANDATORY):
       }
     };
 
-    if (requestType === "study-plan") {
+    if (requestType === "structured-study-plan") {
+      // Generate structured focus areas with modules from syllabus
+      useToolCalling = true;
+      systemPrompt = `You are AgentB creating a STRUCTURED STUDY PLAN for "${className || "the course"}".
+${learningStyleContext}
+${syllabusTopics}
+
+INSTRUCTIONS:
+- Create focus areas from the ACTUAL SYLLABUS TOPICS listed above (or infer logical topics if not available)
+- Order focus areas by prerequisite logic or syllabus timeline
+- Each focus area must have 3-5 learning modules
+- Adapt module content to student's learning styles: ${learningStyles?.join(", ") || "visual, reading"}
+
+MODULE TYPES (use exactly these values):
+- "concept" — Concept explanation (theory, definitions, why it matters)
+- "worked-example" — Step-by-step worked example
+- "guided-practice" — Guided practice with hints
+- "exercise" — Interactive exercise (apply knowledge)
+
+Each focus area should progress: concept → worked-example → guided-practice → exercise
+
+Give each module a clear, specific title and brief description. Estimate time in minutes.
+Generate 4-8 focus areas depending on the course scope.`;
+
+      toolConfig = {
+        tools: [{
+          type: "function",
+          function: {
+            name: "generate_structured_plan",
+            description: "Generate structured focus areas with learning modules",
+            parameters: {
+              type: "object",
+              properties: {
+                focus_areas: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      topic: { type: "string" },
+                      estimated_time_minutes: { type: "number" },
+                      modules: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            module_type: { type: "string", enum: ["concept", "worked-example", "guided-practice", "exercise"] },
+                            title: { type: "string" },
+                            description: { type: "string" },
+                            estimated_time_minutes: { type: "number" },
+                          },
+                          required: ["module_type", "title", "description"]
+                        }
+                      }
+                    },
+                    required: ["topic", "modules"]
+                  }
+                }
+              },
+              required: ["focus_areas"]
+            }
+          }
+        }],
+        tool_choice: { type: "function", function: { name: "generate_structured_plan" } }
+      };
+    } else if (requestType === "module-content") {
+      // Generate content for a specific learning module
+      systemPrompt = `You are AgentB generating learning content for a specific module.
+
+Class: ${className || "the course"}
+Topic: ${topic || "general"}
+Module Type: ${moduleType || "concept"}
+Module Title: ${moduleTitle || "Module"}
+${learningStyleContext}
+${syllabusTopics}
+
+${biasGuardrails}
+
+CONTENT GENERATION RULES based on module type:
+
+If "concept":
+- Provide a clear, thorough explanation of the concept
+- Use analogies and real-world connections
+- Include key definitions and formulas (use LaTeX with $ delimiters)
+- Adapt to learning style (visual → use descriptions of diagrams; practical → real examples)
+
+If "worked-example":
+- Show a complete worked example step by step
+- Number each step clearly
+- Explain WHY each step is taken
+- Use LaTeX for math: $f(x) = x^2$
+
+If "guided-practice":
+- Present a problem for the student to work through
+- Provide hints at each step
+- Include the solution at the end
+- Make it progressively challenging
+
+If "exercise":
+- Present 2-3 practice problems
+- Include varying difficulty
+- Provide solutions with explanations
+- Focus on application, not memorization
+
+Keep content engaging and focused. Use markdown formatting.`;
+
+    } else if (requestType === "study-plan") {
       // Generate personalized study plan based on quiz results
       useToolCalling = true;
       const weakAreas = quizResult?.weakAreas?.join(", ") || "general topics";
