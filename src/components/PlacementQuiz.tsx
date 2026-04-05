@@ -538,11 +538,23 @@ export const PlacementQuiz = ({ learningStyles, onQuizComplete, refreshTrigger, 
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              <AlertTriangle className="w-5 h-5 text-destructive" />
               Regenerate Placement Quiz?
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              This will create a new placement quiz for <span className="font-medium text-foreground">{className}</span> and regenerate your study plan based on the new results. Your previous quiz results will be replaced.
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  This will regenerate the placement quiz for <span className="font-medium text-foreground">{className}</span> and <strong className="text-destructive">reset the following</strong>:
+                </p>
+                <ul className="list-disc pl-5 space-y-1 text-sm">
+                  <li>Course progress &amp; focus areas</li>
+                  <li>Adaptive learning modules</li>
+                  <li>Knowledge gap alerts</li>
+                  <li>Topic checklist status</li>
+                  <li>Study resources &amp; study plan</li>
+                </ul>
+                <p className="text-sm font-medium text-destructive">This action cannot be undone.</p>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -552,9 +564,9 @@ export const PlacementQuiz = ({ learningStyles, onQuizComplete, refreshTrigger, 
                 setAutoGenTriggered(false);
                 generateQuiz(className!);
               }}
-              className="bg-[image:var(--gradient-primary)] hover:opacity-90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Regenerate Quiz
+              Reset &amp; Regenerate
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
