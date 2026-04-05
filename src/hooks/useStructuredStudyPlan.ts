@@ -558,5 +558,8 @@ export const useStructuredStudyPlan = (className: string, learningStyles: string
     isGeneratingReview,
     resetQuizForRetry,
     reload: loadFocusAreas,
+    takeTopicPlacement,
+    topicPlacementLoading,
+    handleTopicPlacementResult,
   };
 };
