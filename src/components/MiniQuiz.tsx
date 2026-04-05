@@ -30,10 +30,11 @@ interface Question {
 
 interface MiniQuizProps {
   isOpen: boolean;
-  onClose: () => void;
+  onClose: (score?: number, total?: number) => void;
   className: string;
   weakAreas: string[];
   learningStyles: string[];
+  onQuizComplete?: (score: number, total: number) => void;
 }
 
 interface QuizSet {
@@ -43,7 +44,7 @@ interface QuizSet {
   questions: Question[];
 }
 
-export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles }: MiniQuizProps) => {
+export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles, onQuizComplete }: MiniQuizProps) => {
   const [quizSets, setQuizSets] = useState<QuizSet[]>([]);
   const [selectedSet, setSelectedSet] = useState<QuizSet | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -177,6 +178,7 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
     } else {
       setIsComplete(true);
       await saveScore();
+      onQuizComplete?.(score + (selectedAnswer === questions[currentIndex].correctIndex ? 1 : 0), questions.length);
     }
   };
 
@@ -184,7 +186,7 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
   const progress = questions.length > 0 ? ((currentIndex + 1) / questions.length) * 100 : 0;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={() => onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -363,7 +365,7 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
               <Button variant="outline" onClick={generateQuizSets}>
                 Generate New Quizzes
               </Button>
-              <Button onClick={onClose}>Done</Button>
+              <Button onClick={() => onClose(score, questions.length)}>Done</Button>
             </div>
           </div>
         )}
