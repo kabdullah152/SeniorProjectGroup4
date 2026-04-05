@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, CheckCircle2, XCircle, FileQuestion, ArrowRight, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface Question {
   id: number;
