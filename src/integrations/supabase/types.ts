@@ -931,7 +931,50 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      profiles_safe: {
+        Row: {
+          canvas_connected_at: string | null
+          canvas_domain: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string | null
+          learning_styles: string[] | null
+          university_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          canvas_connected_at?: string | null
+          canvas_domain?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string | null
+          learning_styles?: string[] | null
+          university_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          canvas_connected_at?: string | null
+          canvas_domain?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string | null
+          learning_styles?: string[] | null
+          university_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_university_id_fkey"
+            columns: ["university_id"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       [_ in never]: never

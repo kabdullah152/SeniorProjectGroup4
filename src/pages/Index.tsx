@@ -36,10 +36,10 @@ const Index = () => {
     if (session) {
       // Check if user has completed learning style quiz
       const { data: profile } = await supabase
-        .from('profiles')
+        .from('profiles_safe' as any)
         .select('learning_styles')
         .eq('id', session.user.id)
-        .single();
+        .single() as { data: { learning_styles: string[] | null } | null };
       
       if (profile?.learning_styles && profile.learning_styles.length > 0) {
         setLearningStyles(profile.learning_styles);
