@@ -365,7 +365,7 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
               <Button variant="outline" onClick={generateQuizSets}>
                 Generate New Quizzes
               </Button>
-              <Button onClick={onClose}>Done</Button>
+              <Button onClick={() => onClose(score, questions.length)}>Done</Button>
             </div>
           </div>
         )}
