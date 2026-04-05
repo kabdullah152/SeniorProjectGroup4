@@ -447,7 +447,7 @@ const CoursePage = () => {
           className={decodedClassName}
         />
 
-        {/* Study Plan */}
+        {/* Study Resources */}
         <StudyPlan
           quizResult={activeClass === decodedClassName ? quizResult : classQuizResult}
           objectives={activeClass === decodedClassName ? objectives : thisClassPlan?.objectives || []}
