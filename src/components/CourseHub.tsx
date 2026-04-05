@@ -179,18 +179,32 @@ export const CourseHub = ({ refreshTrigger = 0 }: CourseHubProps) => {
                   <div className="p-2 rounded-lg bg-primary/10">
                     <BookOpen className="w-5 h-5 text-primary" />
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleArchive(course);
-                    }}
-                    title="Archive course"
-                  >
-                    <Archive className="w-4 h-4 text-muted-foreground" />
-                  </Button>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleArchive(course);
+                      }}
+                      title="Archive course"
+                    >
+                      <Archive className="w-4 h-4 text-muted-foreground" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteTarget(course);
+                      }}
+                      title="Delete course"
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
                 </div>
                 <h4 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
                   {course.class_name}
