@@ -88,6 +88,24 @@ export const StructuredStudyPlan = ({ className, learningStyles }: StructuredStu
     setQuizGateOpen(true);
   };
 
+  const handleStartTopicPlacement = async (areaId: string) => {
+    setTopicPlacementAreaId(areaId);
+    const data = await plan.takeTopicPlacement(areaId);
+    if (data?.questions) {
+      setTopicPlacementQuestions(data);
+      setTopicPlacementOpen(true);
+    }
+  };
+
+  const handleTopicPlacementComplete = async (score: number, total: number) => {
+    if (topicPlacementAreaId) {
+      setTopicPlacementOpen(false);
+      await plan.handleTopicPlacementResult(topicPlacementAreaId, score, total);
+      setTopicPlacementAreaId(null);
+      setTopicPlacementQuestions(null);
+    }
+  };
+
   const isModuleUnlocked = (mod: StudyModule, area: FocusArea): boolean => {
     if (mod.module_type === "lesson") return true;
     if (mod.module_type === "practice") {
