@@ -563,6 +563,7 @@ IMPORTANT: Use LaTeX math notation with dollar sign delimiters for ALL mathemati
 
 ${learningStyleContext}
 ${syllabusTopics}
+${textbookContext}
 
 CRITICAL — QUESTION QUALITY RULES:
 - 80% of questions (8 out of 10) MUST be application/problem-solving questions
