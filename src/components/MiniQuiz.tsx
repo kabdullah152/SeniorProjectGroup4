@@ -38,6 +38,7 @@ interface MiniQuizProps {
   weakAreas: string[];
   learningStyles: string[];
   onQuizComplete?: (score: number, total: number, missedConcepts: string[]) => void;
+  preloadedQuestions?: Question[];
 }
 
 interface QuizSet {
@@ -47,7 +48,7 @@ interface QuizSet {
   questions: Question[];
 }
 
-export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles, onQuizComplete }: MiniQuizProps) => {
+export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles, onQuizComplete, preloadedQuestions }: MiniQuizProps) => {
   const [quizSets, setQuizSets] = useState<QuizSet[]>([]);
   const [selectedSet, setSelectedSet] = useState<QuizSet | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
