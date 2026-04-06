@@ -111,6 +111,9 @@ const AccountSettings = () => {
     <Card className="p-6 shadow-[var(--shadow-medium)]">
       <h2 className="text-xl font-semibold text-foreground mb-4">Account Settings</h2>
       <div className="space-y-4">
+        {/* Theme Toggle */}
+        <ThemeToggle />
+
         {/* Change Email */}
         <div className="flex items-center justify-between p-4 rounded-lg border border-border">
           <div className="flex items-center gap-3">
