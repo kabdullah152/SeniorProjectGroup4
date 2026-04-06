@@ -274,6 +274,8 @@ export const useStructuredStudyPlan = (className: string, learningStyles: string
       }
 
       await loadFocusAreas();
+      // Update knowledge mastery for matching objectives
+      await updateMasteryForTopic(session.user.id, area.topic, percentage);
       toast({ title: "Perfect Score! 🎉", description: `${percentage}% — Next area unlocked!` });
 
     } else if (tier === "passed") {
