@@ -157,19 +157,19 @@ export const Dashboard = ({ learningStyles, onOpenChat, onRetakeQuiz }: Dashboar
 
         {/* Main Content Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {/* Study Resources */}
+          {/* Chat with AgentB */}
           <Card className="p-6 shadow-[var(--shadow-soft)] border-border hover:shadow-[var(--shadow-medium)] transition-[var(--transition-smooth)]">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 rounded-lg bg-primary/10">
                 <BookOpen className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground">Study Resources</h3>
+              <h3 className="text-lg font-semibold text-foreground">Chat with AgentB</h3>
             </div>
             <p className="text-sm text-muted-foreground mb-4">
-              Access your personalized study materials from each course
+              Get instant tutoring help, explanations, and study guidance tailored to your courses
             </p>
             <Button variant="outline" className="w-full" onClick={onOpenChat}>
-              Browse Resources
+              Start Chatting
             </Button>
           </Card>
 
