@@ -322,13 +322,25 @@ export default function Profile() {
         <Card className="p-6 shadow-[var(--shadow-medium)]">
           <h2 className="text-xl font-semibold text-foreground mb-4">Profile Information</h2>
           <form onSubmit={handleUpdateProfile} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="full_name">Full Name</Label>
-              <Input
-                id="full_name"
-                value={profile.full_name || ""}
-                onChange={(e) => updateProfile({ full_name: e.target.value })}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="first_name">First Name</Label>
+                <Input
+                  id="first_name"
+                  value={profile.first_name || ""}
+                  onChange={(e) => updateProfile({ first_name: e.target.value })}
+                  placeholder="First name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="last_name">Last Name</Label>
+                <Input
+                  id="last_name"
+                  value={profile.last_name || ""}
+                  onChange={(e) => updateProfile({ last_name: e.target.value })}
+                  placeholder="Last name"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -338,6 +350,7 @@ export default function Profile() {
                 type="email"
                 value={profile.email || ""}
                 disabled
+                className="text-muted-foreground"
               />
             </div>
 
@@ -365,6 +378,9 @@ export default function Profile() {
             </Button>
           </form>
         </Card>
+
+        {/* Account Settings */}
+        <AccountSettings />
 
         {/* Classes */}
         <Card className="p-6 shadow-[var(--shadow-medium)]">
