@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { MathText } from "@/components/MathText";
+import { QuestionVisual } from "@/components/QuestionVisual";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Zap, CheckCircle2, Lightbulb, ArrowRight, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useTrackEvent } from "@/hooks/useTrackEvent";
 import { useToast } from "@/hooks/use-toast";
 
 interface Exercise {
@@ -21,6 +24,9 @@ interface Exercise {
   solution: string;
   topic: string;
   difficulty: "easy" | "medium" | "hard";
+  visual_required?: boolean;
+  visual_type?: string;
+  visual_data?: any;
 }
 
 interface InteractiveExerciseProps {
@@ -50,6 +56,7 @@ export const InteractiveExercise = ({ isOpen, onClose, className, weakAreas, lea
   const [isLoading, setIsLoading] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const { toast } = useToast();
+  const { track, snapshotWeek } = useTrackEvent();
 
   const generateSingleSet = async (session: any, topic: string, index: number): Promise<ExerciseSet | null> => {
     try {
@@ -171,6 +178,14 @@ export const InteractiveExercise = ({ isOpen, onClose, className, weakAreas, lea
     } else {
       setIsComplete(true);
       await saveProgress();
+      track({
+        eventType: "exercise_completed",
+        className,
+        score: completed.size,
+        total: exercises.length,
+        outcome: "completed",
+      });
+      snapshotWeek(className);
     }
   };
 
@@ -282,7 +297,11 @@ export const InteractiveExercise = ({ isOpen, onClose, className, weakAreas, lea
               {/* Problem */}
               <div className="p-4 rounded-lg bg-muted/50 border border-border">
                 <h4 className="font-semibold text-foreground mb-2">Problem:</h4>
-                <p className="text-foreground whitespace-pre-wrap">{currentExercise?.problem}</p>
+                <p className="text-foreground whitespace-pre-wrap"><MathText text={currentExercise?.problem || ""} /></p>
+                {/* Visual rendering */}
+                {currentExercise?.visual_required && currentExercise?.visual_type && currentExercise?.visual_data && (
+                  <QuestionVisual visualType={currentExercise.visual_type} visualData={currentExercise.visual_data} />
+                )}
               </div>
 
               {/* User Answer Area */}
@@ -311,7 +330,7 @@ export const InteractiveExercise = ({ isOpen, onClose, className, weakAreas, lea
                     <Lightbulb className="w-4 h-4 text-amber-600" />
                     <span className="font-medium text-foreground">Hint</span>
                   </div>
-                  <p className="text-sm text-foreground">{currentExercise?.hint}</p>
+                  <p className="text-sm text-foreground"><MathText text={currentExercise?.hint || ""} /></p>
                 </div>
               )}
 
@@ -322,7 +341,7 @@ export const InteractiveExercise = ({ isOpen, onClose, className, weakAreas, lea
                     <CheckCircle2 className="w-4 h-4 text-green-600" />
                     <span className="font-medium text-foreground">Solution</span>
                   </div>
-                  <p className="text-sm text-foreground whitespace-pre-wrap">{currentExercise?.solution}</p>
+                  <p className="text-sm text-foreground whitespace-pre-wrap"><MathText text={currentExercise?.solution || ""} /></p>
                 </div>
               )}
 

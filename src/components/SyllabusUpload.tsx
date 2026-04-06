@@ -8,6 +8,7 @@ import { Upload, FileText, Trash2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { SyllabusOutline } from "./SyllabusOutline";
+import { validateFile, uploadFile, SYLLABUS_VALIDATION } from "@/lib/uploadEngine";
 
 interface Syllabus {
   id: string;
@@ -36,6 +37,87 @@ export const SyllabusUpload = ({ onUploadComplete }: SyllabusUploadProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  const autoParseNewSyllabus = async (courseName: string, filePath: string) => {
+    try {
+      // Download the file to extract text
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from("syllabi")
+        .download(filePath);
+      if (downloadError) throw downloadError;
+
+      const text = await fileData.text();
+
+      // Call parse-syllabus
+      const { data, error } = await supabase.functions.invoke("agent-b-chat", {
+        body: {
+          requestType: "parse-syllabus",
+          className: courseName,
+          messages: [
+            {
+              role: "user",
+              content: `Here is the syllabus content for ${courseName}. Please extract the course outline:\n\n${text.substring(0, 12000)}`,
+            },
+          ],
+        },
+      });
+
+      if (error) throw error;
+
+      // Update the syllabus record with parsed data
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      await supabase
+        .from("syllabi")
+        .update({
+          course_description: data.courseDescription,
+          learning_objectives: data.learningObjectives,
+          weekly_schedule: data.weeklySchedule || null,
+          grading_policy: data.gradingPolicy || null,
+          required_materials: data.requiredMaterials || null,
+          bloom_classifications: data.bloomClassifications || null,
+          parsed_content: data.parsedSummary,
+          parsed_at: new Date().toISOString(),
+        } as any)
+        .eq("user_id", session.user.id)
+        .eq("class_name", courseName);
+
+      toast({
+        title: "Syllabus parsed!",
+        description: `Extracted course outline for ${courseName}`,
+      });
+
+      // Store textbook mapping
+      if (data.topicTextbookMapping?.length > 0) {
+        localStorage.setItem(`textbook-mapping-${courseName}`, JSON.stringify(data.topicTextbookMapping));
+      }
+
+      // Store chapters for selection
+      let topics: string[] = [];
+      if (data.chapters?.length > 0) {
+        topics = data.chapters;
+      } else if (data.weeklySchedule) {
+        data.weeklySchedule.forEach((w: any) => { if (w.topic) topics.push(w.topic); });
+      }
+      if (topics.length > 0) {
+        localStorage.setItem(`chapters-${courseName}`, JSON.stringify(topics));
+      }
+
+      // Dispatch events for other components
+      window.dispatchEvent(new CustomEvent("syllabus-reparsed", { detail: { className: courseName } }));
+      window.dispatchEvent(new CustomEvent("chapters-selected", { detail: { className: courseName, topics } }));
+
+      await fetchSyllabi();
+    } catch (err) {
+      console.error("Auto-parse error:", err);
+      toast({
+        title: "Auto-parse failed",
+        description: "You can manually parse by clicking 'Extract Outline'",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getCurrentSemester = () => {
     const month = new Date().getMonth();
     if (month >= 0 && month <= 4) return "Spring";
@@ -63,6 +145,12 @@ export const SyllabusUpload = ({ onUploadComplete }: SyllabusUploadProps) => {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const result = validateFile(file, SYLLABUS_VALIDATION);
+      if (!result.valid) {
+        toast({ title: "Invalid file", description: result.error, variant: "destructive" });
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
       setSelectedFile(file);
     }
   };
@@ -89,17 +177,12 @@ export const SyllabusUpload = ({ onUploadComplete }: SyllabusUploadProps) => {
     setIsUploading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) throw new Error("Not authenticated. Please sign out and sign back in.");
+      const user = session.user;
 
-      const filePath = `${user.id}/${Date.now()}-${selectedFile.name}`;
-
-      // Upload file to storage
-      const { error: uploadError } = await supabase.storage
-        .from("syllabi")
-        .upload(filePath, selectedFile);
-
-      if (uploadError) throw uploadError;
+      // Upload file to storage with retry & collision-safe path
+      const { filePath } = await uploadFile("syllabi", user.id, selectedFile);
 
       // Save metadata to database
       const { error: dbError } = await supabase.from("syllabi").insert({
@@ -131,14 +214,18 @@ export const SyllabusUpload = ({ onUploadComplete }: SyllabusUploadProps) => {
 
       toast({
         title: "Syllabus uploaded",
-        description: `${selectedFile.name} has been uploaded successfully`,
+        description: `${selectedFile.name} uploaded — extracting outline...`,
       });
 
+      const uploadedClassName = className.trim();
       setClassName("");
       setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
-      fetchSyllabi();
+      await fetchSyllabi();
       onUploadComplete?.();
+
+      // Auto-trigger syllabus parsing
+      autoParseNewSyllabus(uploadedClassName, filePath);
     } catch (error) {
       console.error("Upload error:", error);
       toast({

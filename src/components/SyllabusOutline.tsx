@@ -6,6 +6,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { BookOpen, Target, Calendar, GraduationCap, Package, Loader2, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ChapterSelectionDialog } from "@/components/ChapterSelectionDialog";
 
 interface SyllabusOutlineProps {
   syllabusId: string;
@@ -33,6 +34,8 @@ export const SyllabusOutline = ({
   onParseComplete,
 }: SyllabusOutlineProps) => {
   const [isParsing, setIsParsing] = useState(false);
+  const [showChapterSelection, setShowChapterSelection] = useState(false);
+  const [extractedTopics, setExtractedTopics] = useState<string[]>([]);
   const { toast } = useToast();
 
   const handleParseSyllabus = async () => {
@@ -72,9 +75,10 @@ export const SyllabusOutline = ({
           weekly_schedule: data.weeklySchedule || null,
           grading_policy: data.gradingPolicy || null,
           required_materials: data.requiredMaterials || null,
+          bloom_classifications: data.bloomClassifications || null,
           parsed_content: data.parsedSummary,
           parsed_at: new Date().toISOString(),
-        })
+        } as any)
         .eq("id", syllabusId);
 
       if (updateError) throw updateError;
@@ -83,6 +87,34 @@ export const SyllabusOutline = ({
         title: "Syllabus parsed!",
         description: `Extracted course outline for ${className}`,
       });
+
+      // Use the new "chapters" field (clean noun phrases) for chapter selection
+      // Fall back to weekly schedule topics, then objectives
+      let topics: string[] = [];
+      if (data.chapters && data.chapters.length > 0) {
+        topics = data.chapters;
+      } else if (data.weeklySchedule) {
+        data.weeklySchedule.forEach((w: any) => { if (w.topic) topics.push(w.topic); });
+      }
+      if (topics.length === 0 && data.learningObjectives) {
+        topics.push(...data.learningObjectives.slice(0, 15));
+      }
+
+      // Store topic-to-textbook mapping if available
+      if (data.topicTextbookMapping && data.topicTextbookMapping.length > 0) {
+        localStorage.setItem(`textbook-mapping-${className}`, JSON.stringify(data.topicTextbookMapping));
+      }
+
+      if (topics.length > 0) {
+        setExtractedTopics(topics);
+        setShowChapterSelection(true);
+      }
+
+      // Auto-populate calendar from syllabus dates
+      await autoPopulateCalendar(data.weeklySchedule, data.gradingPolicy);
+
+      // Dispatch event so course page components (ChapterBreakdowns, CourseTextbooks) can refresh
+      window.dispatchEvent(new CustomEvent("syllabus-reparsed", { detail: { className } }));
 
       onParseComplete();
     } catch (error) {
@@ -95,6 +127,88 @@ export const SyllabusOutline = ({
     } finally {
       setIsParsing(false);
     }
+  };
+
+  const autoPopulateCalendar = async (weeklySchedule: any[], gradingPolicy: any[]) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const events: { title: string; date: string; type: string }[] = [];
+    const now = new Date();
+    // Estimate semester start as current or next Monday
+    const semesterStart = new Date(now);
+    semesterStart.setDate(semesterStart.getDate() - semesterStart.getDay() + 1);
+    if (semesterStart < now) semesterStart.setDate(semesterStart.getDate() - 7); // go back to start of current week
+
+    if (Array.isArray(weeklySchedule)) {
+      weeklySchedule.forEach((week: any) => {
+        const weekNum = parseInt(week.week) || 0;
+        if (weekNum <= 0) return;
+        const weekDate = new Date(semesterStart);
+        weekDate.setDate(weekDate.getDate() + (weekNum - 1) * 7);
+        const dateStr = weekDate.toISOString().split("T")[0];
+
+        // Detect event types from topic/details
+        const combined = `${week.topic || ""} ${week.details || ""}`.toLowerCase();
+        if (combined.includes("midterm")) {
+          events.push({ title: `${className}: Midterm`, date: dateStr, type: "midterm" });
+        } else if (combined.includes("final")) {
+          events.push({ title: `${className}: Final Exam`, date: dateStr, type: "final" });
+        } else if (combined.includes("quiz")) {
+          events.push({ title: `${className}: Quiz - ${week.topic}`, date: dateStr, type: "quiz" });
+        } else if (combined.includes("exam") || combined.includes("test")) {
+          events.push({ title: `${className}: ${week.topic}`, date: dateStr, type: "test" });
+        } else if (combined.includes("lab") || combined.includes("due") || combined.includes("assignment") || combined.includes("homework")) {
+          events.push({ title: `${className}: ${week.topic}`, date: dateStr, type: "homework" });
+        }
+        // Always add a study topic marker
+        if (!events.find(e => e.date === dateStr)) {
+          events.push({ title: `${className}: ${week.topic}`, date: dateStr, type: "other" });
+        }
+      });
+    }
+
+    if (events.length === 0) return;
+
+    // Remove existing auto-generated events for this class to avoid duplicates
+    await supabase
+      .from("calendar_events")
+      .delete()
+      .eq("user_id", session.user.id)
+      .ilike("description", `syllabus-auto:${className}`);
+
+    // Insert new events
+    let addedCount = 0;
+    for (const evt of events) {
+      const { error } = await supabase.from("calendar_events").insert({
+        user_id: session.user.id,
+        title: evt.title,
+        event_date: evt.date,
+        event_type: evt.type,
+        description: `syllabus-auto:${className}`,
+      });
+      if (!error) addedCount++;
+    }
+
+    if (addedCount > 0) {
+      toast({
+        title: "Calendar updated",
+        description: `${addedCount} dates added from syllabus to course calendar`,
+      });
+      // Notify course page to refresh calendar
+      window.dispatchEvent(new CustomEvent("calendar-updated", { detail: { className } }));
+    }
+  };
+
+  const handleChapterConfirm = async (selectedTopics: string[]) => {
+    // Store the selected chapters in localStorage for use by study plan generation
+    localStorage.setItem(`chapters-${className}`, JSON.stringify(selectedTopics));
+    toast({
+      title: "Chapters confirmed",
+      description: `${selectedTopics.length} chapters selected for ${className}`,
+    });
+    // Dispatch event so adaptive learning picks up selected chapters
+    window.dispatchEvent(new CustomEvent("chapters-selected", { detail: { className, topics: selectedTopics } }));
   };
 
   const hasParsedData = !!parsedAt;
@@ -259,6 +373,14 @@ export const SyllabusOutline = ({
           </>
         )}
       </Button>
+
+      <ChapterSelectionDialog
+        open={showChapterSelection}
+        onOpenChange={setShowChapterSelection}
+        className={className}
+        topics={extractedTopics}
+        onConfirm={handleChapterConfirm}
+      />
     </Card>
   );
 };

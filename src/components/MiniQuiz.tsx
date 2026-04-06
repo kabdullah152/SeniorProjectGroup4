@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { MathText } from "@/components/MathText";
+import { QuestionVisual } from "@/components/QuestionVisual";
 import {
   Dialog,
   DialogContent,
@@ -11,9 +13,11 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Loader2, CheckCircle2, XCircle, FileQuestion, ArrowRight, RotateCcw } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, FileQuestion, ArrowRight, RotateCcw, Brain, Wrench, Search, Scale, Sparkles, Lightbulb } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useTrackEvent } from "@/hooks/useTrackEvent";
 
 interface Question {
   id: number;
@@ -21,14 +25,31 @@ interface Question {
   options: string[];
   correctIndex: number;
   explanation: string;
+  bloom_level?: string;
+  misconception?: string;
+  trap_explanation?: string;
+  visual_required?: boolean;
+  visual_type?: string;
+  visual_data?: any;
 }
+
+const BLOOM_BADGE_CONFIG: Record<string, { label: string; emoji: string; color: string; Icon: any }> = {
+  remember: { label: "Recall", emoji: "📝", color: "bg-red-500/10 text-red-700 border-red-500/20", Icon: Brain },
+  understand: { label: "Understand", emoji: "💡", color: "bg-orange-500/10 text-orange-700 border-orange-500/20", Icon: Lightbulb },
+  apply: { label: "Application", emoji: "🔧", color: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20", Icon: Wrench },
+  analyze: { label: "Analysis", emoji: "🔬", color: "bg-green-500/10 text-green-700 border-green-500/20", Icon: Search },
+  evaluate: { label: "Evaluation", emoji: "⚖️", color: "bg-blue-500/10 text-blue-700 border-blue-500/20", Icon: Scale },
+  create: { label: "Create", emoji: "✨", color: "bg-purple-500/10 text-purple-700 border-purple-500/20", Icon: Sparkles },
+};
 
 interface MiniQuizProps {
   isOpen: boolean;
-  onClose: () => void;
+  onClose: (score?: number, total?: number, missedConcepts?: string[]) => void;
   className: string;
   weakAreas: string[];
   learningStyles: string[];
+  onQuizComplete?: (score: number, total: number, missedConcepts: string[]) => void;
+  preloadedQuestions?: Question[];
 }
 
 interface QuizSet {
@@ -38,7 +59,7 @@ interface QuizSet {
   questions: Question[];
 }
 
-export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles }: MiniQuizProps) => {
+export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles, onQuizComplete, preloadedQuestions }: MiniQuizProps) => {
   const [quizSets, setQuizSets] = useState<QuizSet[]>([]);
   const [selectedSet, setSelectedSet] = useState<QuizSet | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -49,6 +70,7 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
   const [isLoading, setIsLoading] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const { toast } = useToast();
+  const { track, snapshotWeek } = useTrackEvent();
 
   const generateSingleQuiz = async (session: any, topic: string, index: number): Promise<QuizSet | null> => {
     try {
@@ -103,6 +125,21 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
     setScore(0);
     setIsComplete(false);
 
+    // If preloaded questions are provided, use them directly
+    if (preloadedQuestions && preloadedQuestions.length > 0) {
+      const preloadedSet: QuizSet = {
+        id: 0,
+        title: weakAreas[0] || "Topic Placement",
+        description: "Assess your existing knowledge",
+        questions: preloadedQuestions,
+      };
+      setQuizSets([preloadedSet]);
+      setSelectedSet(preloadedSet);
+      setQuestions(preloadedQuestions);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -136,12 +173,19 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
     setQuestions(set.questions);
   };
 
+  const [missedConcepts, setMissedConcepts] = useState<string[]>([]);
+
   const handleAnswer = () => {
     if (selectedAnswer === null) return;
     
     setIsAnswered(true);
     if (selectedAnswer === questions[currentIndex].correctIndex) {
       setScore(prev => prev + 1);
+    } else {
+      // Track missed concept for review system
+      const q = questions[currentIndex];
+      const concept = q.misconception || q.question.slice(0, 60);
+      setMissedConcepts(prev => [...prev, concept]);
     }
   };
 
@@ -172,6 +216,17 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
     } else {
       setIsComplete(true);
       await saveScore();
+      const finalScore = score + (selectedAnswer === questions[currentIndex].correctIndex ? 1 : 0);
+      track({
+        eventType: "quiz_completed",
+        className,
+        score: finalScore,
+        total: questions.length,
+        outcome: finalScore >= questions.length * 0.7 ? "pass" : "needs_improvement",
+        metadata: { weakAreas },
+      });
+      snapshotWeek(className);
+      onQuizComplete?.(finalScore, questions.length, missedConcepts);
     }
   };
 
@@ -179,7 +234,7 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
   const progress = questions.length > 0 ? ((currentIndex + 1) / questions.length) * 100 : 0;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={() => onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -258,7 +313,23 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
             </div>
 
             <div className="p-4 rounded-lg bg-muted/50 border border-border">
-              <p className="font-medium text-foreground">{currentQuestion?.question}</p>
+              <div className="flex items-center gap-2 mb-2">
+                {currentQuestion?.bloom_level && BLOOM_BADGE_CONFIG[currentQuestion.bloom_level] && (() => {
+                  const cfg = BLOOM_BADGE_CONFIG[currentQuestion.bloom_level!];
+                  const BloomIcon = cfg.Icon;
+                  return (
+                    <Badge variant="outline" className={`text-xs ${cfg.color}`}>
+                      <BloomIcon className="w-3 h-3 mr-1" />
+                      {cfg.emoji} {cfg.label}
+                    </Badge>
+                  );
+                })()}
+              </div>
+              <p className="font-medium text-foreground"><MathText text={currentQuestion?.question || ""} /></p>
+              {/* Visual rendering */}
+              {currentQuestion?.visual_required && currentQuestion?.visual_type && currentQuestion?.visual_data && (
+                <QuestionVisual visualType={currentQuestion.visual_type} visualData={currentQuestion.visual_data} />
+              )}
             </div>
 
             <RadioGroup
@@ -290,7 +361,7 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
                       htmlFor={`option-${idx}`} 
                       className={`flex-1 cursor-pointer ${isAnswered ? "cursor-default" : ""}`}
                     >
-                      {option}
+                      <MathText text={option} />
                     </Label>
                     {isAnswered && isCorrect && (
                       <CheckCircle2 className="w-5 h-5 text-green-500" />
@@ -304,10 +375,22 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
             </RadioGroup>
 
             {isAnswered && (
-              <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+              <div className={cn(
+                "p-4 rounded-lg border",
+                selectedAnswer === currentQuestion?.correctIndex
+                  ? "bg-green-500/5 border-green-500/20"
+                  : "bg-destructive/5 border-destructive/20"
+              )}>
                 <p className="text-sm text-foreground">
-                  <strong>Explanation:</strong> {currentQuestion?.explanation}
+                  <strong>Explanation:</strong> <MathText text={currentQuestion?.explanation || ""} />
                 </p>
+                {selectedAnswer !== currentQuestion?.correctIndex && currentQuestion?.trap_explanation && (
+                  <div className="mt-2 pt-2 border-t border-border">
+                    <p className="text-sm text-destructive">
+                      <strong>Why your answer was wrong:</strong> <MathText text={currentQuestion.trap_explanation} />
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -354,7 +437,7 @@ export const MiniQuiz = ({ isOpen, onClose, className, weakAreas, learningStyles
               <Button variant="outline" onClick={generateQuizSets}>
                 Generate New Quizzes
               </Button>
-              <Button onClick={onClose}>Done</Button>
+              <Button onClick={() => onClose(score, questions.length)}>Done</Button>
             </div>
           </div>
         )}

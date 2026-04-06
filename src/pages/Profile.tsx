@@ -7,10 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useProfile } from "@/hooks/useProfile";
-import { ArrowLeft, Plus, FileText, Lightbulb, Image as ImageIcon, ClipboardCheck, Upload, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, FileText, Lightbulb, Image as ImageIcon, ClipboardCheck, Upload, Trash2, Mail, Lock, UserX, Sun, Moon, Monitor } from "lucide-react";
+import { PrivacySettings } from "@/components/PrivacySettings";
+import { LearningStyleEditor } from "@/components/LearningStyleEditor";
+import { useTheme } from "next-themes";
 
 interface UserClass {
   id: string;
@@ -43,6 +48,242 @@ interface LearningResource {
   subject: string | null;
   difficulty_level: "beginner" | "intermediate" | "advanced" | null;
 }
+
+const ThemeToggle = () => {
+  const { theme, setTheme } = useTheme();
+
+  const options = [
+    { value: "light", label: "Light", icon: Sun },
+    { value: "dark", label: "Dark", icon: Moon },
+    { value: "system", label: "System", icon: Monitor },
+  ];
+
+  return (
+    <div className="flex items-center justify-between p-4 rounded-lg border border-border">
+      <div className="flex items-center gap-3">
+        <div className="p-2 rounded-lg bg-primary/10">
+          <Sun className="w-5 h-5 text-primary" />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-foreground">Appearance</p>
+          <p className="text-xs text-muted-foreground">Choose light or dark mode</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-1 p-1 rounded-lg bg-muted">
+        {options.map(opt => {
+          const Icon = opt.icon;
+          const isActive = theme === opt.value;
+          return (
+            <button
+              key={opt.value}
+              onClick={() => setTheme(opt.value)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                isActive
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+const AccountSettings = () => {
+  const [changeEmailOpen, setChangeEmailOpen] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleChangeEmail = async () => {
+    if (!newEmail.trim()) return;
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({ email: newEmail.trim() });
+    setLoading(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Confirmation sent", description: "Check your new email to confirm the change" });
+      setChangeEmailOpen(false);
+      setNewEmail("");
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Error", description: "Passwords do not match", variant: "destructive" });
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast({ title: "Error", description: "Password must be at least 6 characters", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setLoading(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Password updated", description: "Your password has been changed successfully" });
+      setChangePasswordOpen(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    // Sign out and inform user about account deletion process
+    toast({
+      title: "Account deletion requested",
+      description: "Please contact support to complete account deletion. You have been signed out.",
+    });
+    await supabase.auth.signOut();
+    navigate("/auth");
+  };
+
+  return (
+    <Card className="p-6 shadow-[var(--shadow-medium)]">
+      <h2 className="text-xl font-semibold text-foreground mb-4">Account Settings</h2>
+      <div className="space-y-4">
+        {/* Theme Toggle */}
+        <ThemeToggle />
+
+        {/* Change Email */}
+        <div className="flex items-center justify-between p-4 rounded-lg border border-border">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Mail className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Change Email</p>
+              <p className="text-xs text-muted-foreground">Update your email address</p>
+            </div>
+          </div>
+          <Dialog open={changeEmailOpen} onOpenChange={setChangeEmailOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">Change</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Change Email Address</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <Label>New Email</Label>
+                  <Input
+                    type="email"
+                    placeholder="Enter new email address"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  A confirmation link will be sent to your new email address.
+                </p>
+                <Button className="w-full" onClick={handleChangeEmail} disabled={loading || !newEmail.trim()}>
+                  {loading ? "Sending..." : "Send Confirmation"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* Change Password */}
+        <div className="flex items-center justify-between p-4 rounded-lg border border-border">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Lock className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Change Password</p>
+              <p className="text-xs text-muted-foreground">Update your account password</p>
+            </div>
+          </div>
+          <Dialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">Change</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Change Password</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <Label>New Password</Label>
+                  <Input
+                    type="password"
+                    placeholder="Enter new password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Confirm New Password</Label>
+                  <Input
+                    type="password"
+                    placeholder="Confirm new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                </div>
+                <Button className="w-full" onClick={handleChangePassword} disabled={loading || !newPassword || !confirmPassword}>
+                  {loading ? "Updating..." : "Update Password"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <Separator />
+
+        {/* Delete Account */}
+        <div className="flex items-center justify-between p-4 rounded-lg border border-destructive/30 bg-destructive/5">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-destructive/10">
+              <UserX className="w-5 h-5 text-destructive" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-destructive">Delete Account</p>
+              <p className="text-xs text-muted-foreground">Permanently delete your account and all data</p>
+            </div>
+          </div>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm">Delete</Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Account</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action is permanent and cannot be undone. All your courses, study plans, practice history, and personal data will be permanently deleted. You will not be able to recover any of this information.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteAccount}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Yes, delete my account
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </div>
+    </Card>
+  );
+};
 
 export default function Profile() {
   const [classes, setClasses] = useState<UserClass[]>([]);
@@ -319,13 +560,25 @@ export default function Profile() {
         <Card className="p-6 shadow-[var(--shadow-medium)]">
           <h2 className="text-xl font-semibold text-foreground mb-4">Profile Information</h2>
           <form onSubmit={handleUpdateProfile} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="full_name">Full Name</Label>
-              <Input
-                id="full_name"
-                value={profile.full_name || ""}
-                onChange={(e) => updateProfile({ full_name: e.target.value })}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="first_name">First Name</Label>
+                <Input
+                  id="first_name"
+                  value={profile.first_name || ""}
+                  onChange={(e) => updateProfile({ first_name: e.target.value })}
+                  placeholder="First name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="last_name">Last Name</Label>
+                <Input
+                  id="last_name"
+                  value={profile.last_name || ""}
+                  onChange={(e) => updateProfile({ last_name: e.target.value })}
+                  placeholder="Last name"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -335,6 +588,7 @@ export default function Profile() {
                 type="email"
                 value={profile.email || ""}
                 disabled
+                className="text-muted-foreground"
               />
             </div>
 
@@ -362,6 +616,16 @@ export default function Profile() {
             </Button>
           </form>
         </Card>
+
+        {/* Learning Style */}
+        <LearningStyleEditor
+          currentStyles={profile.learning_styles}
+          onUpdate={(styles) => updateProfile({ learning_styles: styles })}
+          onSave={saveProfile}
+        />
+
+        {/* Account Settings */}
+        <AccountSettings />
 
         {/* Classes */}
         <Card className="p-6 shadow-[var(--shadow-medium)]">
@@ -514,6 +778,9 @@ export default function Profile() {
             </div>
           )}
         </Card>
+
+        {/* Privacy & Compliance Settings */}
+        <PrivacySettings />
 
         {/* Available Learning Resources */}
         <Card className="p-6 shadow-[var(--shadow-medium)]">

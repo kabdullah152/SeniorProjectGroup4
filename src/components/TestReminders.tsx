@@ -49,10 +49,16 @@ export const TestReminders = () => {
 
   const fetchTests = async () => {
     setIsLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setIsLoading(false); return; }
+
+    // Fetch only exam-type calendar events
+    const examTypes = ["exam", "test", "quiz", "midterm", "final"];
     const { data, error } = await supabase
       .from("calendar_events")
       .select("*")
-      .in("event_type", ["test", "exam", "quiz", "midterm", "final"])
+      .eq("user_id", session.user.id)
+      .in("event_type", examTypes)
       .order("event_date", { ascending: true });
 
     if (error) {
