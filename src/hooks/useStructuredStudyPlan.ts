@@ -341,6 +341,7 @@ export const useStructuredStudyPlan = (className: string, learningStyles: string
         .eq("user_id", session.user.id);
 
       await loadFocusAreas();
+      await updateMasteryForTopic(session.user.id, area.topic, percentage);
 
       // Trigger review generation
       if (missedConcepts && missedConcepts.length > 0) {
