@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
-  BookOpen, MessageSquare, Calendar, MapPin, Utensils, Bus, Shield, User, LogOut
+  BookOpen, MessageSquare, Calendar, MapPin, Utensils, Bus, Shield, User, LogOut, MessageCircle
 } from "lucide-react";
 import { DashboardReadAloud } from "./DashboardReadAloud";
 import { SyllabusUpload } from "./SyllabusUpload";
