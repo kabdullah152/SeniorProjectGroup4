@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Plus, AlertTriangle, Clock } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
 
 interface CalendarEvent {
@@ -56,6 +56,7 @@ export default function CalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [selectedDateEvents, setSelectedDateEvents] = useState<CalendarEvent[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
   const [newEvent, setNewEvent] = useState({
     title: "",
     description: "",
@@ -65,6 +66,11 @@ export default function CalendarPage() {
   });
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     checkAuthAndFetchEvents();
@@ -170,6 +176,15 @@ export default function CalendarPage() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="text-2xl font-bold text-foreground">Campus Calendar</h1>
+            <div className="ml-auto flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-4 py-2">
+              <Clock className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium tabular-nums text-foreground">
+                {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {currentTime.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
+              </span>
+            </div>
           </div>
         </div>
       </header>
