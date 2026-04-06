@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { updateKnowledgeMastery } from "@/hooks/useKnowledgeMastery";
 
 export interface FocusArea {
   id: string;
@@ -239,6 +240,29 @@ export const useStructuredStudyPlan = (className: string, learningStyles: string
     }
   }, [className, learningStyles, loadFocusAreas, toast]);
 
+  // Helper: update knowledge mastery for objectives matching a topic
+  const updateMasteryForTopic = async (userId: string, topic: string, score: number) => {
+    try {
+      const { data: components } = await supabase
+        .from("knowledge_components" as any)
+        .select("id, parent_topic, objective")
+        .eq("user_id", userId)
+        .eq("class_name", className);
+
+      if (!components || components.length === 0) return;
+
+      const topicLower = topic.toLowerCase();
+      const matching = (components as any[]).filter((c: any) =>
+        (c.parent_topic && c.parent_topic.toLowerCase().includes(topicLower)) ||
+        c.objective.toLowerCase().includes(topicLower)
+      );
+
+      await Promise.all(matching.map((c: any) => updateKnowledgeMastery(userId, c.id, score)));
+    } catch (err) {
+      console.error("Mastery update error:", err);
+    }
+  };
+
   // Pass focus area quiz gate with tiered scoring
   const passQuizGate = useCallback(async (
     focusAreaId: string,
@@ -273,6 +297,8 @@ export const useStructuredStudyPlan = (className: string, learningStyles: string
       }
 
       await loadFocusAreas();
+      // Update knowledge mastery for matching objectives
+      await updateMasteryForTopic(session.user.id, area.topic, percentage);
       toast({ title: "Perfect Score! 🎉", description: `${percentage}% — Next area unlocked!` });
 
     } else if (tier === "passed") {
@@ -293,6 +319,7 @@ export const useStructuredStudyPlan = (className: string, learningStyles: string
       }
 
       await loadFocusAreas();
+      await updateMasteryForTopic(session.user.id, area.topic, percentage);
 
       // Show review for missed concepts
       if (missedConcepts && missedConcepts.length > 0) {
@@ -314,6 +341,7 @@ export const useStructuredStudyPlan = (className: string, learningStyles: string
         .eq("user_id", session.user.id);
 
       await loadFocusAreas();
+      await updateMasteryForTopic(session.user.id, area.topic, percentage);
 
       // Trigger review generation
       if (missedConcepts && missedConcepts.length > 0) {
