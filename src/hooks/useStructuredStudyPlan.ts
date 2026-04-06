@@ -319,6 +319,7 @@ export const useStructuredStudyPlan = (className: string, learningStyles: string
       }
 
       await loadFocusAreas();
+      await updateMasteryForTopic(session.user.id, area.topic, percentage);
 
       // Show review for missed concepts
       if (missedConcepts && missedConcepts.length > 0) {
